@@ -1,0 +1,4752 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>法治星途 · 卡牌挑战</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #1a3b6d, #2c5a9e);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .game-container {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      animation: containerFadeIn 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    @keyframes containerFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      animation: breathe 3s ease-in-out infinite alternate;
+    }
+    @keyframes breathe {
+      from { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+      to { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(0, 198, 251, 0.6); }
+    }
+    p.subtitle {
+      color: #a0d8ff;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+      animation: subtitleFade 1s ease-out forwards 0.3s;
+      opacity: 0;
+    }
+    @keyframes subtitleFade {
+      to { opacity: 1; }
+    }
+    /* 账户面板样式 */
+    .account-panel {
+      background: linear-gradient(135deg, rgba(0, 91, 234, 0.2), rgba(0, 198, 251, 0.1));
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 25px;
+      text-align: left;
+      animation: fadeIn 1s ease-out forwards 0.4s;
+      opacity: 0;
+      border: 1px solid rgba(0, 198, 251, 0.3);
+    }
+    .account-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .account-title {
+      color: #ffd740;
+      font-size: 1.2em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .account-tag {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd740;
+      font-size: 0.8em;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .account-stats {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 0.95em;
+      color: #a0d8ff;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stat-value {
+      color: #ffffff;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+    }
+    /* 难度选择区域样式 */
+    .difficulty-area {
+      margin: 20px 0;
+      animation: fadeIn 1s ease-out forwards 0.5s;
+      opacity: 0;
+    }
+    .difficulty-title {
+      font-size: 1.2em;
+      color: #ffd740;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .difficulty-btns {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .difficulty-btn {
+      background: linear-gradient(45deg, #005bea, #00c6fb);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 15px rgba(0, 91, 234, 0.3);
+    }
+    .difficulty-btn:hover {
+      background: linear-gradient(45deg, #0047b3, #00a8e8);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 91, 234, 0.5);
+    }
+    .difficulty-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(0, 91, 234, 0.3);
+    }
+    /* 分隔线样式 */
+    .divider {
+      width: 80%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.3);
+      margin: 25px auto;
+      animation: fadeIn 1s ease-out forwards 0.7s;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    .upload-area {
+      margin: 10px 0 30px;
+      transition: all 0.5s ease-out;
+      animation: fadeIn 1s ease-out forwards 0.9s;
+      opacity: 0;
+    }
+    .upload-btn {
+      background: linear-gradient(45deg, #4CAF50, #3e8e41);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      will-change: transform, box-shadow, background;
+    }
+    .upload-btn:hover {
+      background: linear-gradient(45deg, #3e8e41, #2d6d30);
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+    }
+    .upload-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+    }
+    .quiz-area {
+      display: none;
+      margin-top: 30px;
+      animation: quizAreaIn 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    @keyframes quizAreaIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .progress-indicator {
+      font-size: 1.2em;
+      color: #a0d8ff;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      animation: indicatorFade 0.6s ease-out forwards 0.5s;
+      opacity: 0;
+    }
+    .progress-indicator span {
+      color: #ffffff;
+      background: rgba(0, 91, 234, 0.3);
+      padding: 5px 15px;
+      border-radius: 30px;
+      margin: 0 5px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+    /* 计时显示样式 */
+    .timer-display {
+      font-size: 1.1em;
+      color: #ffd740;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    @keyframes indicatorFade {
+      to { opacity: 1; }
+    }
+    .card {
+      perspective: 1500px;
+      margin: 20px auto;
+      max-width: 600px;
+      animation: cardPop 0.5s ease-out forwards;
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    @keyframes cardPop {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      border-radius: 15px;
+      will-change: transform;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg) scale(1.02);
+    }
+    .card-front,
+    .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 15px;
+      padding: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite alternate;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    .card-front {
+      background: linear-gradient(45deg, #005bea, #00c6fb, #005bea);
+    }
+    .card-back {
+      background: linear-gradient(45deg, #f093fb, #f5576c, #f093fb);
+      transform: rotateY(180deg);
+    }
+    .options {
+      margin-top: 20px;
+      animation: optionsIn 0.6s ease-out forwards 0.3s;
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    @keyframes optionsIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .option-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 15px;
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      will-change: background, transform, box-shadow;
+    }
+    .option-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+    .option-btn:active {
+      transform: translateY(-1px);
+    }
+    .option-btn.correct {
+      background: linear-gradient(45deg, #4CAF50, #388E3C);
+      animation: correctPulse 0.5s ease-out;
+    }
+    .option-btn.incorrect {
+      background: linear-gradient(45deg, #F44336, #D32F2F);
+      animation: incorrectShake 0.3s ease-in-out;
+    }
+    @keyframes correctPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    @keyframes incorrectShake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    .result-area {
+      display: none;
+      margin-top: 30px;
+      animation: resultFadeIn 0.8s ease-out forwards;
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    @keyframes resultFadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      70% {
+        transform: scale(1.05);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .result-area h2 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      animation: confetti 0.5s ease-out infinite alternate;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+    }
+    @keyframes confetti {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+    .summary {
+      font-size: 1.3em;
+      line-height: 2;
+      margin-bottom: 20px;
+    }
+    /* 总耗时显示样式 */
+    .total-time {
+      font-size: 1.2em;
+      color: #ffd740;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    .weakness {
+      color: #FF5252;
+      font-weight: bold;
+      animation: blink 2s ease-in-out infinite alternate;
+    }
+    @keyframes blink {
+      from { opacity: 1; }
+      to { opacity: 0.8; text-shadow: 0 0 10px rgba(255, 82, 82, 0.8); }
+    }
+    /* 图表容器：禁用动画，确保Edge下可见 */
+    .chart-container {
+      width: 100%;
+      height: 380px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      opacity: 1 !important;
+      animation: none !important;
+    }
+    .chart-title {
+      font-size: 1.2em;
+      color: #a0d8ff;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .weakness-tip {
+      font-size: 1.1em;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      animation: tipFade 1s ease-out forwards 0.5s;
+      opacity: 0;
+    }
+    @keyframes tipFade {
+      to { opacity: 1; }
+    }
+    /* 按钮通用样式优化 */
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin: 20px auto;
+    }
+    .download-btn, .back-home-btn, .history-btn {
+      background: linear-gradient(45deg, #005bea, #00c6fb);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 15px rgba(0, 91, 234, 0.3);
+      display: inline-block;
+    }
+    .back-home-btn {
+      background: linear-gradient(45deg, #f5576c, #f093fb); /* 区分颜色，便于识别 */
+    }
+    .history-btn {
+      background: linear-gradient(45deg, #ff9800, #ffd740);
+    }
+    .download-btn:hover, .back-home-btn:hover, .history-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 91, 234, 0.5);
+    }
+    .download-btn:active, .back-home-btn:active, .history-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(0, 91, 234, 0.3);
+    }
+    .download-btn:hover {
+      background: linear-gradient(45deg, #0047b3, #00a8e8);
+    }
+    .back-home-btn:hover {
+      background: linear-gradient(45deg, #e84a5f, #e578f2);
+    }
+    .history-btn:hover {
+      background: linear-gradient(45deg, #f57c00, #ffc107);
+    }
+    /* 错题统计提示 */
+    .wrong-count {
+      color: #ffd740;
+      font-size: 1.1em;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    /* 历史记录模态框样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-content {
+      background: linear-gradient(135deg, #1a3b6d, #2c5a9e);
+      border-radius: 15px;
+      padding: 25px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(0, 198, 251, 0.3);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+    .modal-title {
+      color: #ffd740;
+      font-size: 1.5em;
+      margin: 0;
+    }
+    .close-modal {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .history-item {
+      background: linear-gradient(135deg, rgba(0, 91, 234, 0.1), rgba(0, 198, 251, 0.05));
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 3px solid #00c6fb;
+      transition: transform 0.3s ease;
+    }
+    .history-item:hover {
+      transform: translateX(5px);
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+      color: #a0d8ff;
+    }
+    .history-stats {
+      line-height: 1.5;
+      font-size: 1em;
+      color: #ffffff;
+    }
+    .history-empty {
+      text-align: center;
+      padding: 50px 0;
+      color: #a0d8ff;
+      font-size: 1.1em;
+    }
+    footer {
+      margin-top: 40px;
+      color: #a0d8ff;
+      font-size: 0.9em;
+      animation: footerFade 1s ease-out forwards 1s;
+      opacity: 0;
+    }
+    @keyframes footerFade {
+      to { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+      }
+    }
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+      .progress-indicator {
+        font-size: 1em;
+      }
+      .timer-display, .total-time {
+        font-size: 1em;
+      }
+      .progress-indicator span {
+        padding: 4px 12px;
+      }
+      .card-inner {
+        height: 180px;
+      }
+      .option-btn {
+        padding: 12px;
+        font-size: 1em;
+      }
+      .download-btn, .back-home-btn, .difficulty-btn, .history-btn {
+        padding: 10px 20px;
+        font-size: 1em;
+      }
+      .difficulty-btns, .btn-group {
+        gap: 10px;
+      }
+      .quiz-area, .result-area, .options {
+        animation-duration: 0.4s !important;
+      }
+      .chart-container {
+        height: 320px;
+      }
+      .account-panel {
+        padding: 12px;
+      }
+      .account-stats {
+        gap: 15px;
+        font-size: 0.9em;
+      }
+      .modal-content {
+        padding: 15px;
+      }
+    }
+  </style>
+  <!-- 关键修复：使用Edge兼容的Chart.js版本（本地缓存+CDN双保险） -->
+  <script src="chart.umd.min.js"></script>
+  <!-- 引入CryptoJS用于AES加密解密 -->
+  <script src="crypto-js.min.js"></script>
+  <!-- 备用方案：若CDN加载失败，使用本地备份（需将对应文件放在同一目录） -->
+  <script>
+    if (typeof Chart === 'undefined') {
+      document.write('<script src="chart.umd.min.js"><\/script>');
+    }
+    if (typeof CryptoJS === 'undefined') {
+      document.write('<script src="crypto-js.min.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <div class="game-container">
+    <h1>法治星途</h1>
+    <p class="subtitle">翻开知识之牌，点亮成长之路</p>
+    
+    <!-- 账户面板 -->
+    <div class="account-panel" onclick="openHistoryModal()">
+      <div class="account-header">
+        <div class="account-title">👤 我的账户</div>
+        <div class="account-tag">设备唯一账户</div>
+      </div>
+      <div class="account-stats">
+        <div class="stat-item">账户ID：<span class="stat-value" id="accountId">加载中...</span></div>
+        <div class="stat-item">累计答题：<span class="stat-value" id="totalAnswered">0</span> 道</div>
+        <div class="stat-item">累计正确率：<span class="stat-value" id="totalAccuracy">0%</span></div>
+        <div class="stat-item">历史错题：<span class="stat-value" id="totalWrong">0</span> 道</div>
+      </div>
+    </div>
+    
+    <!-- 难度选择区域（对应3个预设题库） -->
+    <div class="difficulty-area">
+      <div class="difficulty-title">📌 选择挑战难度</div>
+      <div class="difficulty-btns">
+        <button class="difficulty-btn" onclick="selectDifficulty('easy')">简单题（题库1）</button>
+        <button class="difficulty-btn" onclick="selectDifficulty('medium')">中等题（题库2）</button>
+        <button class="difficulty-btn" onclick="selectDifficulty('hard')">难题（题库3）</button>
+      </div>
+    </div>
+    
+    <!-- 分隔线 -->
+    <div class="divider"></div>
+    
+    <!-- 文件上传（保留导入自定义题库功能） -->
+    <div class="upload-area">
+      <div class="difficulty-title">📂 或导入自定义题库</div>
+      <input type="file" id="quizFile" accept=".txt" style="display:none"/>
+      <button class="upload-btn" onclick="document.getElementById('quizFile').click()">
+        加载自定义题库 (.txt)
+      </button>
+    </div>
+    
+    <!-- 答题区域 -->
+    <div class="quiz-area" id="quizArea">
+      <div class="progress-indicator">
+        当前进度：<span id="current-question">1</span> / <span id="total-questions">0</span>
+      </div>
+      <!-- 实时计时显示 -->
+      <div class="timer-display" id="timerDisplay">⏱️ 已用时：00:00</div>
+      <div class="card" id="questionCard">
+        <div class="card-inner">
+          <div class="card-front" id="front"></div>
+          <div class="card-back" id="back"></div>
+        </div>
+      </div>
+      <div class="options" id="options"></div>
+    </div>
+    
+    <!-- 结果区域 -->
+    <div class="result-area" id="resultArea">
+      <h2>🎉 挑战完成！</h2>
+      <div class="summary" id="summary"></div>
+      <!-- 总耗时显示 -->
+      <div class="total-time" id="totalTimeDisplay">⏱️ 总耗时：00:00</div>
+      
+      <!-- 错题统计提示 -->
+      <div class="wrong-count" id="wrongCount"></div>
+      
+      <!-- 按钮组：下载错题 + 查看历史 + 返回主页 -->
+      <div class="btn-group">
+        <button class="download-btn" id="downloadWrongBtn" onclick="downloadWrongQuestions()">
+          📥 下载错题（TXT格式）
+        </button>
+        <button class="history-btn" onclick="openHistoryModal()">
+          📜 查看答题历史
+        </button>
+        <button class="back-home-btn" onclick="backToHome()">
+          🏠 返回主页
+        </button>
+      </div>
+      
+      <!-- 分类准确率柱状图 -->
+      <div class="chart-container">
+        <div class="chart-title">各单元答题准确率</div>
+        <canvas id="categoryChart"></canvas>
+      </div>
+      
+      <!-- 时间分布圆形统计图（简化为翻牌时间、浏览时间） -->
+      <div class="chart-container">
+        <div class="chart-title">翻牌时间 vs 浏览时间分布</div>
+        <canvas id="timePieChart"></canvas>
+      </div>
+      
+      <div class="weakness-tip" id="weaknessTip"></div>
+    </div>
+    
+   <!-- 答题历史模态框（新增下载全部记录按钮） -->
+<div class="modal" id="historyModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">📜 账户答题历史</h3>
+      <button class="close-modal" onclick="closeHistoryModal()">×</button>
+    </div>
+    <!-- 新增：下载全部答题记录按钮 -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button class="download-btn" onclick="downloadAllHistoryRecords()">
+        📥 下载全部答题记录（TXT格式）
+      </button>
+    </div>
+    <div id="historyList">
+      <!-- 历史记录将动态加载 -->
+    </div>
+  </div>
+</div>
+    
+    <footer>© 2025 小天AI伙伴 · 道德与法治学习助手</footer>
+  </div>
+  <script>
+    let questions = [];
+    let currentQ = null;
+    let currentIndex = 0;
+    let score = 0;
+    let answers = [];
+    let totalQuestionCount = 0; // 实际作答题数（≤20）
+    let categoryData = {};
+    let chartInstance = null;
+    
+    // 计时相关核心变量（简化为翻牌时间和浏览时间）
+    let totalTimer = 0; // 总耗时（秒）
+    let questionTimer = 0; // 单题翻牌思考时间（秒）
+    let timerInterval = null; // 全局计时定时器
+    let qTimer = null; // 单题计时定时器
+    let timeDistribution = { // 简化后的时间分布数据
+      flipTime: 0, // 翻牌思考总时间（所有题目翻牌后到选择答案前的总耗时）
+      browseTime: 0 // 浏览时间（结果页停留时间）
+    };
+    
+    // 账户核心变量
+    let accountInfo = null;
+    let accountHistory = []; // 账户答题历史记录
+    const ACCOUNT_STORAGE_KEY = 'ruleOfLaw_UniqueAccount';
+    const HISTORY_STORAGE_KEY = 'ruleOfLaw_AccountHistory';
+    const WRONG_QUESTIONS_KEY = 'ruleOfLaw_AccountWrongQuestions';
+    
+    // AES加密配置（实际项目中建议动态获取或加密存储）
+    const AES_CONFIG = {
+      key: CryptoJS.enc.Utf8.parse('f27d5c3a8b9e10456789abcdef012345'), // 256位密钥（32个字符）
+      iv: CryptoJS.enc.Utf8.parse('1234567890abcdef'), // 16位偏移量（16个字符）
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    };
+    
+    // 页面加载时初始化账户
+    window.addEventListener('DOMContentLoaded', function() {
+      initAccount();
+      loadAccountData();
+      renderAccountInfo();
+    });
+    
+    // 初始化设备唯一账户
+    function initAccount() {
+      try {
+        // 优先读取已有账户
+        const savedAccount = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+        if (savedAccount) {
+          accountInfo = JSON.parse(savedAccount);
+          return;
+        }
+        
+        // 生成设备唯一指纹
+        const deviceFeatures = [
+          navigator.userAgent,
+          navigator.language || navigator.browserLanguage,
+          screen.width + 'x' + screen.height + '_' + screen.colorDepth,
+          new Date().getTimezoneOffset().toString(),
+          navigator.hardwareConcurrency || 'unknown',
+          navigator.platform || 'unknown'
+        ].join('|');
+        
+        // 使用SHA256生成更安全的唯一标识
+        const deviceFingerprint = CryptoJS.SHA256(deviceFeatures).toString();
+        // 账户ID简化为10位，兼顾可读性和唯一性
+        const accountId = deviceFingerprint.substring(0, 10).toUpperCase();
+        
+        // 创建新账户
+        accountInfo = {
+          accountId: accountId,
+          deviceFingerprint: deviceFingerprint,
+          createTime: new Date().toLocaleString(),
+          lastActiveTime: new Date().toLocaleString(),
+          totalAnswered: 0,
+          totalCorrect: 0,
+          totalWrong: 0
+        };
+        
+        // 保存账户到本地存储
+        localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountInfo));
+        // 初始化关联数据
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(WRONG_QUESTIONS_KEY, JSON.stringify([]));
+        
+        console.log('账户初始化成功，ID：', accountId);
+      } catch (error) {
+        console.error('账户初始化失败，使用临时账户：', error);
+        // 降级方案：使用时间戳生成临时账户
+        const tempAccountId = 'TEMP_' + Date.now().toString().substring(6).toUpperCase();
+        accountInfo = {
+          accountId: tempAccountId,
+          deviceFingerprint: 'temp_' + Date.now(),
+          createTime: new Date().toLocaleString(),
+          lastActiveTime: new Date().toLocaleString(),
+          totalAnswered: 0,
+          totalCorrect: 0,
+          totalWrong: 0
+        };
+      }
+    }
+    
+    // 加载账户数据
+    function loadAccountData() {
+      try {
+        const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+        const savedWrongQuestions = localStorage.getItem(WRONG_QUESTIONS_KEY);
+        
+        // 数据验证，避免解析失败
+        accountHistory = savedHistory ? (JSON.parse(savedHistory) || []) : [];
+      } catch (error) {
+        console.error('加载账户数据失败，重置历史记录：', error);
+        accountHistory = [];
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify([]));
+      }
+    }
+    
+    // 渲染账户信息
+    function renderAccountInfo() {
+      if (!accountInfo) return;
+      
+      // 更新最后活跃时间
+      accountInfo.lastActiveTime = new Date().toLocaleString();
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountInfo));
+      
+      const totalAnswered = accountInfo.totalAnswered;
+      const totalCorrect = accountInfo.totalCorrect;
+      const totalWrong = accountInfo.totalWrong;
+      // 避免除以零错误
+      const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+      
+      // 渲染到页面
+      document.getElementById('accountId').textContent = accountInfo.accountId;
+      document.getElementById('totalAnswered').textContent = totalAnswered;
+      document.getElementById('totalAccuracy').textContent = accuracy + '%';
+      document.getElementById('totalWrong').textContent = totalWrong;
+    }
+    
+    // 保存答题历史到账户
+    function saveQuizHistory() {
+      try {
+        const total = questions.length;
+        const correct = answers.filter(a => a.correctFlag).length;
+        const accuracy = Math.round((correct / total) * 100);
+        const difficulty = getCurrentDifficulty();
+        
+        // 构建详细历史记录
+        const historyItem = {
+          id: Date.now(),
+          time: new Date().toLocaleString(),
+          difficulty: difficulty,
+          totalQuestions: total,
+          correct: correct,
+          accuracy: accuracy,
+          totalTime: formatTime(totalTimer),
+          flipTime: formatTime(timeDistribution.flipTime),
+          browseTime: formatTime(timeDistribution.browseTime),
+          wrongCount: total - correct,
+          categoryStats: JSON.parse(JSON.stringify(categoryData)) // 深拷贝分类数据
+        };
+        
+        // 添加到历史记录（限制最多保存50条）
+        accountHistory.unshift(historyItem);
+        if (accountHistory.length > 50) {
+          accountHistory = accountHistory.slice(0, 50);
+        }
+        
+        // 保存历史记录
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(accountHistory));
+        
+        // 更新账户统计数据
+        accountInfo.totalAnswered += total;
+        accountInfo.totalCorrect += correct;
+        accountInfo.totalWrong += (total - correct);
+        accountInfo.lastActiveTime = new Date().toLocaleString();
+        localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountInfo));
+        
+        // 实时更新页面显示
+        renderAccountInfo();
+      } catch (error) {
+        console.error('保存答题历史失败：', error);
+        alert('答题历史保存失败，但不影响本次挑战结果');
+      }
+    }
+    
+    // 获取当前答题难度
+    function getCurrentDifficulty() {
+      if (questions.length === 0) return '自定义题库';
+      const firstQuestion = questions[0].question || '';
+      if (presetQuestions.easy.includes(firstQuestion)) return '简单题';
+      if (presetQuestions.medium.includes(firstQuestion)) return '中等题';
+      if (presetQuestions.hard.includes(firstQuestion)) return '难题';
+      return '自定义题库';
+    }
+    
+    // 打开答题历史模态框
+    function openHistoryModal() {
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = '';
+      
+      if (accountHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">暂无答题历史记录</div>';
+      } else {
+        // 按时间倒序排列（最新在前）
+        accountHistory.forEach(item => {
+          const historyItem = document.createElement('div');
+          historyItem.className = 'history-item';
+          historyItem.innerHTML = `
+            <div class="history-header">
+              <span>${item.time}</span>
+              <span>${item.difficulty}</span>
+            </div>
+            <div class="history-stats">
+              答题数：${item.totalQuestions} 道 | 正确数：${item.correct} 道 | 准确率：${item.accuracy}%<br>
+              总耗时：${item.totalTime} | 翻牌思考：${item.flipTime} | 浏览时间：${item.browseTime}<br>
+              错题数：${item.wrongCount} 道
+            </div>
+          `;
+          historyList.appendChild(historyItem);
+        });
+      }
+      
+      document.getElementById('historyModal').style.display = 'flex';
+    }
+    
+    // 关闭答题历史模态框
+    function closeHistoryModal() {
+      document.getElementById('historyModal').style.display = 'none';
+    }
+    
+    // 保存错题到账户错题集
+    function saveWrongQuestionsToAccount(wrongQuestions) {
+      if (wrongQuestions.length === 0) return;
+      
+      try {
+        const savedWrong = localStorage.getItem(WRONG_QUESTIONS_KEY);
+        const allWrongQuestions = savedWrong ? (JSON.parse(savedWrong) || []) : [];
+        
+        // 去重逻辑：根据题目内容去重
+        const newWrongQuestions = wrongQuestions.filter(newWrong => {
+          return !allWrongQuestions.some(existing => existing.question === newWrong.question);
+        });
+        
+        if (newWrongQuestions.length > 0) {
+          allWrongQuestions.push(...newWrongQuestions);
+          // 限制错题集最多100道
+          if (allWrongQuestions.length > 100) {
+            allWrongQuestions.splice(0, allWrongQuestions.length - 100);
+          }
+          localStorage.setItem(WRONG_QUESTIONS_KEY, JSON.stringify(allWrongQuestions));
+        }
+      } catch (error) {
+        console.error('保存错题集失败：', error);
+      }
+    }
+    
+    // AES加密函数
+    function aesEncrypt(text) {
+      if (!text) return '';
+      try {
+        const encrypted = CryptoJS.AES.encrypt(text, AES_CONFIG.key, {
+          iv: AES_CONFIG.iv,
+          mode: AES_CONFIG.mode,
+          padding: AES_CONFIG.padding
+        });
+        return encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+      } catch (error) {
+        console.error('AES加密失败：', error);
+        return text; // 加密失败则返回明文
+      }
+    }
+    
+    // AES解密函数
+    function aesDecrypt(ciphertext) {
+      if (!ciphertext) return '';
+      try {
+        const decrypted = CryptoJS.AES.decrypt(ciphertext, AES_CONFIG.key, {
+          iv: AES_CONFIG.iv,
+          mode: AES_CONFIG.mode,
+          padding: AES_CONFIG.padding
+        });
+        return decrypted.toString(CryptoJS.enc.Utf8);
+      } catch (error) {
+        console.error('AES解密失败，尝试作为明文处理：', error);
+        return ciphertext; // 解密失败则返回原字符串
+      }
+    }
+    
+    // 核心：3个预设题库（答案已AES加密）
+    const presetQuestions = {
+      // 简单题（对应第1个TXT文件：题库2.txt）
+      easy: `Q: 初中阶段被称为人生的“拔节孕穗期”，主要强调的是？
+A: 身体发育最快的时期
+B: 初步形成世界观、人生观、价值观的关键期
+C: 学习任务最繁重的阶段
+D: 开始接触社会实践活动的起点
+ANS: ${aesEncrypt('B')}
+Q: 钱学森认为对他一生影响深远的17人中，有几位是中学老师？
+A: 5位
+B: 7位
+C: 9位
+D: 12位
+ANS: ${aesEncrypt('B')}
+Q: “人生万事须自为，跬步江山即寥廓”强调青年最宝贵的特质是？
+A: 追求进步
+B: 贪图享乐
+C: 随波逐流
+D: 安于现状
+ANS: ${aesEncrypt('A')}
+Q: 规划初中生活的首要步骤是？
+A: 确定个人发展目标
+B: 购买学习资料
+C: 认识新朋友
+D: 熟悉校园环境
+ANS: ${aesEncrypt('A')}
+Q: “知人者智，自知者明”体现的是哪一课的主题？
+A: 认识自己
+B: 家的意味
+C: 敬畏生命
+D: 确立人生目标
+ANS: ${aesEncrypt('A')}
+Q: 正确认识自己的途径不包括？
+A: 自我反思
+B: 他人评价
+C: 盲目攀比
+D: 生活实践
+ANS: ${aesEncrypt('C')}
+Q: 做更好的自己，不需要做到的是？
+A: 接纳自己的缺点
+B: 模仿他人的一切
+C: 发挥自身优势
+D: 不断改正缺点
+ANS: ${aesEncrypt('B')}
+Q: 改正缺点的方法中，不恰当的是？
+A: 从最难的缺点开始
+B: 具体描述缺点
+C: 及时奖励自己
+D: 请信任的人协助
+ANS: ${aesEncrypt('A')}
+Q: 梦想的本质是？
+A: 对未来美好生活的愿望
+B: 不切实际的幻想
+C: 他人强加的目标
+D: 一时兴起的想法
+ANS: ${aesEncrypt('A')}
+Q: 实现梦想的重要路径是？
+A: 好好学习
+B: 等待机会
+C: 依赖他人
+D: 空想冥想
+ANS: ${aesEncrypt('A')}
+Q: 学习的三个层次不包括？
+A: 记忆
+B: 理解
+C: 运用
+D: 遗忘
+ANS: ${aesEncrypt('D')}
+Q: 毛泽东少年时期如饥似渴阅读的书籍不包括？
+A: 《三国演义》
+B: 《水浒传》
+C: 《论语》
+D: 网络游戏攻略
+ANS: ${aesEncrypt('D')}
+Q: “学习是半径，半径越大，世界越广阔”说明学习能？
+A: 提升能力
+B: 浪费时间
+C: 增加负担
+D: 限制视野
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法不利于规划初中生活？
+A: 结合自身兴趣设定目标
+B: 听取老师和家长建议
+C: 盲目跟风他人计划
+D: 根据社会需要调整方向
+ANS: ${aesEncrypt('C')}
+Q: 中学阶段与小学阶段相比，最主要的变化是？
+A: 自我意识逐步增强
+B: 不需要遵守规则
+C: 学习科目减少
+D: 自主时间减少
+ANS: ${aesEncrypt('A')}
+Q: “凡事预则立，不预则废”强调的是？
+A: 规划的重要性
+B: 运气的重要性
+C: 天赋的重要性
+D: 家庭的重要性
+ANS: ${aesEncrypt('A')}
+Q: 认识自己的过程是？
+A: 一蹴而就的
+B: 长期逐步深入的
+C: 无需努力的
+D: 他人主导的
+ANS: ${aesEncrypt('B')}
+Q: 面对他人不客观的评价，正确的做法是？
+A: 盲目接受
+B: 理性思考后选择忽略或拒绝
+C: 激烈反驳
+D: 自我否定
+ANS: ${aesEncrypt('B')}
+Q: 少年梦想的特点是？
+A: 与中国梦无关
+B: 只关注个人利益
+C: 充满朝气，富有可能性
+D: 固定不变的
+ANS: ${aesEncrypt('C')}
+Q: 实现梦想不需要的是？
+A: 努力奋斗
+B: 坚持不懈
+C: 畏难退缩
+D: 善于学习
+ANS: ${aesEncrypt('C')}
+Q: 初中生活的序幕拉开，我们应该珍视的是？
+A: 当下机遇
+B: 过去成绩
+C: 未来幻想
+D: 他人眼光
+ANS: ${aesEncrypt('A')}
+Q: “在担当中历练，在尽责中成长”要求我们成为怎样的中学生？
+A: 有理想、敢担当
+B: 怕困难、爱逃避
+C: 重自我、轻集体
+D: 喜安逸、厌奋斗
+ANS: ${aesEncrypt('A')}
+Q: 自我意识增强的表现不包括？
+A: 主动规划未来
+B: 在意他人评价
+C: 盲目听从安排
+D: 发现自身特点
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种行为体现了“追求进步”的特质？
+A: 主动预习新知识
+B: 上课走神睡觉
+C: 作业抄袭应付
+D: 拒绝参加活动
+ANS: ${aesEncrypt('A')}
+Q: 中学教育对钱学森的成长起到了什么作用？
+A: 打下坚实基础
+B: 没有影响
+C: 增加负担
+D: 限制发展
+ANS: ${aesEncrypt('A')}
+Q: 正确对待他人评价的态度是？
+A: 全盘接受
+B: 全盘否定
+C: 理性分析
+D: 置之不理
+ANS: ${aesEncrypt('C')}
+Q: 做有梦想的少年，不需要具备的是？
+A: 坚定信念
+B: 刻苦学习
+C: 强健体魄
+D: 好高骛远
+ANS: ${aesEncrypt('D')}
+Q: 学习的基本任务是在哪个阶段？
+A: 中学阶段
+B: 大学阶段
+C: 工作后
+D: 退休后
+ANS: ${aesEncrypt('A')}
+Q: “无字之书”指的是？
+A: 社会实践活动
+B: 空白的课本
+C: 网络小说
+D: 娱乐杂志
+ANS: ${aesEncrypt('A')}
+Q: 梦想即使不能实现，也能起到的作用是？
+A: 引领方向
+B: 让人沮丧
+C: 浪费时间
+D: 增加压力
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种说法是正确的？
+A: 梦想与现实是平行线，永远无法相交
+B: 只有努力奋斗，梦想才能实现
+C: 现实常常会把梦想打败，无需追梦
+D: 梦想越大越好，不用考虑实际
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段的自我发展不包括？
+A: 知识积累
+B: 视野开阔
+C: 能力提升
+D: 停止成长
+ANS: ${aesEncrypt('D')}
+Q: “珍视当下”要求我们把握的是？
+A: 眼前的机遇
+B: 过去的荣誉
+C: 未来的幻想
+D: 他人的帮助
+ANS: ${aesEncrypt('A')}
+Q: 认识自己的“自画像”活动主要是为了？
+A: 更了解自己
+B: 炫耀自己
+C: 批评他人
+D: 完成任务
+ANS: ${aesEncrypt('A')}
+Q: 他人对自己的评价中，我们应该关注的是？
+A: 客观公正的评价
+B: 恶意的贬损
+C: 虚假的吹捧
+D: 片面的判断
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法体现了“做更好的自己”？
+A: 发挥音乐天赋参加比赛
+B: 因为身材自卑而封闭自己
+C: 看到别人擅长画画就盲目学习
+D: 拒绝承认自己的不足
+ANS: ${aesEncrypt('A')}
+Q: 初中生活规划不需要考虑的因素是？
+A: 自身兴趣
+B: 性格特点
+C: 他人的攀比对象
+D: 社会需要
+ANS: ${aesEncrypt('C')}
+Q: “努力”的正确方法不包括？
+A: 珍视团队合作
+B: 盲目蛮干
+C: 制定计划
+D: 保持自律
+ANS: ${aesEncrypt('B')}
+Q: 钱学森进入的北京师范大学附属中学属于什么阶段的学校？
+A: 中学阶段
+B: 小学阶段
+C: 大学阶段
+D: 幼儿园阶段
+ANS: ${aesEncrypt('A')}
+Q: 青年追求政治进步的“人生三部曲”不包括？
+A: 入队
+B: 入团
+C: 入党
+D: 入职
+ANS: ${aesEncrypt('D')}
+Q: 正确认识自己的目的是？
+A: 自我完善
+B: 自我否定
+C: 盲目自信
+D: 与人攀比
+ANS: ${aesEncrypt('A')}
+Q: 梦想与中国梦的关系是？
+A: 相互割裂
+B: 个人梦想融入中国梦
+C: 中国梦依赖个人梦想
+D: 个人梦想大于中国梦
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段的主要任务是？
+A: 学习
+B: 打工赚钱
+C: 追求享乐
+D: 无所事事
+ANS: ${aesEncrypt('A')}
+Q: “学习成就梦想”体现了学习的什么作用？
+A: 实现梦想的重要路径
+B: 浪费时间的行为
+C: 增加负担的过程
+D: 枯燥无味的活动
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为是“追求进步”的表现？
+A: 主动请教老师问题
+B: 上课故意捣乱
+C: 作业拖延不交
+D: 拒绝参加学习活动
+ANS: ${aesEncrypt('A')}
+Q: 做有梦想的少年，应该将个人梦想与什么结合？
+A: 中国梦
+B: 个人私利
+C: 游戏等级
+D: 明星八卦
+ANS: ${aesEncrypt('A')}
+Q: 认识自己的过程中，应该避免的是？
+A: 自我反思
+B: 客观评价
+C: 盲目自大
+D: 听取建议
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种做法不利于初中生活规划？
+A: 制定具体目标
+B: 缺乏自律
+C: 逐步落实计划
+D: 及时调整方向
+ANS: ${aesEncrypt('B')}
+Q: “拔节孕穗期”要求初中生在这个阶段要注重？
+A: 品德培养
+B: 只关注成绩
+C: 追求物质
+D: 逃避责任
+ANS: ${aesEncrypt('A')}
+Q: 钱学森归国后首先探望的是？
+A: 中学母校
+B: 小学母校
+C: 大学母校
+D: 工作单位
+ANS: ${aesEncrypt('A')}
+Q: “天下之本在家”强调的是？
+A: 家庭的重要性
+B: 学校的重要性
+C: 社会的重要性
+D: 个人的重要性
+ANS: ${aesEncrypt('A')}
+Q: 家庭是社会的什么细胞？
+A: 基本细胞
+B: 次要细胞
+C: 可有可无的细胞
+D: 临时细胞
+ANS: ${aesEncrypt('A')}
+Q: 家的意味不包括？
+A: 温暖的牵挂
+B: 真切的关怀
+C: 甜蜜的碰撞
+D: 无休止的争吵
+ANS: ${aesEncrypt('D')}
+Q: 建设幸福和睦的家庭，不需要做到的是？
+A: 体味亲情之爱
+B: 相互关爱
+C: 彼此包容
+D: 斤斤计较
+ANS: ${aesEncrypt('D')}
+Q: 孔繁森两次进藏工作，主要体现了他的？
+A: 勤政为民
+B: 贪图名利
+C: 逃避责任
+D: 追求安逸
+ANS: ${aesEncrypt('A')}
+Q: 教师职业的使命是？
+A: 教书育人
+B: 谋取私利
+C: 敷衍了事
+D: 享受特权
+ANS: ${aesEncrypt('A')}
+Q: 孔子提出的教育思想不包括？
+A: 有教无类
+B: 因材施教
+C: 循循善诱
+D: 体罚学生
+ANS: ${aesEncrypt('D')}
+Q: 陶行知主张的教育理念是？
+A: 生活即教育
+B: 死记硬背
+C: 分数至上
+D: 脱离实践
+ANS: ${aesEncrypt('A')}
+Q: 教育家精神的核心不包括？
+A: 心有大我、至诚报国
+B: 言为士则、行为世范
+C: 敷衍塞责、不思进取
+D: 乐教爱生、甘于奉献
+ANS: ${aesEncrypt('C')}
+Q: 和谐师生关系的基础是？
+A: 相互尊重
+B: 教师权威
+C: 学生服从
+D: 利益交换
+ANS: ${aesEncrypt('A')}
+Q: 面对不同风格的老师，正确的做法是？
+A: 尊重并适应
+B: 挑剔指责
+C: 拒绝接受
+D: 区别对待
+ANS: ${aesEncrypt('A')}
+Q: 王亚南尊重口头表达能力较差的老师，体现了？
+A: 尊重老师的所有方面
+B: 盲目崇拜
+C: 虚伪逢迎
+D: 投机取巧
+ANS: ${aesEncrypt('A')}
+Q: 友谊的真谛是？
+A: 心灵的相遇
+B: 物质交换
+C: 相互利用
+D: 表面应付
+ANS: ${aesEncrypt('A')}
+Q: “益者三友”不包括？
+A: 友直
+B: 友谅
+C: 友多闻
+D: 友便佞
+ANS: ${aesEncrypt('D')}
+Q: 马克思和恩格斯的友谊体现了友谊的什么特质？
+A: 志同道合
+B: 相互利用
+C: 利益交换
+D: 表面和谐
+ANS: ${aesEncrypt('A')}
+Q: 建立友谊不需要的是？
+A: 真诚热情
+B: 敞开心扉
+C: 主动表达
+D: 封闭自我
+ANS: ${aesEncrypt('D')}
+Q: 交友应慎重选择，下列哪种朋友不值得交往？
+A: 品德高尚的人
+B: 诚信的人
+C: 谄媚奉承的人
+D: 见闻广博的人
+ANS: ${aesEncrypt('C')}
+Q: 呵护友谊的方法不包括？
+A: 坦诚交流
+B: 换位思考
+C: 斤斤计较
+D: 彼此信任
+ANS: ${aesEncrypt('C')}
+Q: 集体的定义是？
+A: 人们联合起来的有组织的整体
+B: 随机聚集的人群
+C: 没有共同目标的群体
+D: 相互排斥的个体集合
+ANS: ${aesEncrypt('A')}
+Q: 集体联结度与下列哪个因素无关？
+A: 成员间关联程度
+B: 集体对成员的重要性
+C: 成员间交流频率
+D: 成员的家庭背景
+ANS: ${aesEncrypt('D')}
+Q: 集体生活成就我，不包括？
+A: 提高自理能力
+B: 开阔视野
+C: 变得自私自利
+D: 提升人际交往能力
+ANS: ${aesEncrypt('C')}
+Q: 美好集体的愿景不包括？
+A: 共同的梦想
+B: 一致的目标
+C: 正确的价值观
+D: 各自为政的想法
+ANS: ${aesEncrypt('D')}
+Q: 建设美好集体的首要步骤是？
+A: 确定共同愿景
+B: 分配物质利益
+C: 划分小团体
+D: 制定严格惩罚制度
+ANS: ${aesEncrypt('A')}
+Q: 集体主义原则的核心是？
+A: 国家利益、集体利益、个人利益根本一致
+B: 个人利益高于一切
+C: 集体利益无视个人利益
+D: 国家利益服从个人利益
+ANS: ${aesEncrypt('A')}
+Q: 个人意愿与集体要求发生矛盾时，正确的做法是？
+A: 找到平衡点
+B: 坚持个人意愿
+C: 消极抵抗
+D: 脱离集体
+ANS: ${aesEncrypt('A')}
+Q: 集体生活中的合作策略不包括？
+A: 坦诚交流
+B: 彼此信任
+C: 推卸责任
+D: 主动支持
+ANS: ${aesEncrypt('C')}
+Q: “人者固非可孤立生存于世界也，必有群然后人格始能立”强调的是？
+A: 集体生活的重要性
+B: 个人独立的重要性
+C: 逃避集体的重要性
+D: 孤立生存的重要性
+ANS: ${aesEncrypt('A')}
+Q: 班级信箱的设立主要是为了？
+A: 促进师生交流
+B: 传递八卦消息
+C: 抱怨老师同学
+D: 浪费时间
+ANS: ${aesEncrypt('A')}
+Q: 班级文化建设不包括？
+A: 制定班级口号
+B: 展示书画作品
+C: 搞小团体对立
+D: 设立班级目标
+ANS: ${aesEncrypt('C')}
+Q: 集体事务细分给每个人的目的是？
+A: 增强凝聚力
+B: 增加负担
+C: 制造矛盾
+D: 推卸责任
+ANS: ${aesEncrypt('A')}
+Q: 师生关系的特点不包括？
+A: 教学相长
+B: 相互促进
+C: 等级森严
+D: 平等尊重
+ANS: ${aesEncrypt('C')}
+Q: 老师的职责不包括？
+A: 传播知识
+B: 塑造灵魂
+C: 谋取私利
+D: 传播真理
+ANS: ${aesEncrypt('C')}
+Q: 与老师交往的正确做法不包括？
+A: 主动沟通
+B: 尊重老师
+C: 隐瞒想法
+D: 虚心请教
+ANS: ${aesEncrypt('C')}
+Q: 友谊能够超越的是？
+A: 物质条件
+B: 心灵沟通
+C: 志同道合
+D: 相互理解
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为不利于集体团结？
+A: 相互关爱
+B: 相互支持
+C: 相互排斥
+D: 相互帮助
+ANS: ${aesEncrypt('C')}
+Q: 美好集体的特征不包括？
+A: 民主公正
+B: 充满活力
+C: 冷漠自私
+D: 善于合作
+ANS: ${aesEncrypt('C')}
+Q: 集体生活中，正确的竞争态度是？
+A: 相互促进
+B: 相互打压
+C: 嫉妒他人
+D: 隐瞒优势
+ANS: ${aesEncrypt('A')}
+Q: 家庭文明建设的重要性不包括？
+A: 促进社会和谐
+B: 国家发展的基点
+C: 民族进步的支撑
+D: 引发家庭矛盾
+ANS: ${aesEncrypt('D')}
+Q: 表达对家人的爱，不恰当的方式是？
+A: 大声说出“我爱你”
+B: 给家人一个拥抱
+C: 冷战不沟通
+D: 给家人写一封信
+ANS: ${aesEncrypt('C')}
+Q: 与朋友发生矛盾时，正确的做法是？
+A: 协商宽容
+B: 断绝来往
+C: 到处抱怨
+D: 伺机报复
+ANS: ${aesEncrypt('A')}
+Q: 集体中的每个人应该？
+A: 主动承担责任
+B: 推卸责任
+C: 坐享其成
+D: 消极应付
+ANS: ${aesEncrypt('A')}
+Q: 人的生命由什么构成？
+A: 肉体和精神
+B: 肉体
+C: 精神
+D: 物质
+ANS: ${aesEncrypt('A')}
+Q: 生命的特点不包括？
+A: 独特性
+B: 不可逆
+C: 短暂性
+D: 重复性
+ANS: ${aesEncrypt('D')}
+Q: “天地之间人为贵”强调的是？
+A: 人的生命宝贵
+B: 物质财富宝贵
+C: 权力地位宝贵
+D: 名誉声望宝贵
+ANS: ${aesEncrypt('A')}
+Q: 敬畏生命的核心是？
+A: 关爱他人生命
+B: 漠视他人生命
+C: 只珍惜自己生命
+D: 践踏生命
+ANS: ${aesEncrypt('A')}
+Q: 2008年汶川地震后，每年的全国防灾减灾日是？
+A: 5月12日
+B: 5月1日
+C: 6月1日
+D: 9月10日
+ANS: ${aesEncrypt('A')}
+Q: 敬畏生命要求我们坚持？
+A: 人民至上、生命至上
+B: 金钱至上
+C: 权力至上
+D: 利益至上
+ANS: ${aesEncrypt('A')}
+Q: 生命安全不包括？
+A: 身体健康
+B: 财产安全
+C: 心理健康
+D: 生命存在
+ANS: ${aesEncrypt('B')}
+Q: 增强安全意识，不需要做到的是？
+A: 忽视安全提示
+B: 查找安全疏散通道
+C: 学习安全知识
+D: 保持警惕
+ANS: ${aesEncrypt('A')}
+Q: 公共卫生安全不包括？
+A: 疾病预防控制
+B: 环境卫生
+C: 食品安全
+D: 网络安全
+ANS: ${aesEncrypt('D')}
+Q: 维护公共卫生安全的做法不包括？
+A: 勤洗手
+B: 勤通风
+C: 随地吐痰
+D: 做好免疫接种
+ANS: ${aesEncrypt('C')}
+Q: 面对自然灾害，正确的做法是？
+A: 掌握自救方法
+B: 惊慌失措
+C: 盲目逃生
+D: 放弃希望
+ANS: ${aesEncrypt('A')}
+Q: 心肺复苏的最佳抢救时间是？
+A: 4分钟内
+B: 10分钟内
+C: 15分钟内
+D: 20分钟内
+ANS: ${aesEncrypt('A')}
+Q: 爱护身体的做法不包括？
+A: 适量运动
+B: 合理饮食
+C: 熬夜上网
+D: 规律作息
+ANS: ${aesEncrypt('C')}
+Q: 保持身心健康不需要的是？
+A: 滋养心灵
+B: 滥用药物
+C: 定期体检
+D: 良好卫生习惯
+ANS: ${aesEncrypt('B')}
+Q: 心理健康的表现不包括？
+A: 积极乐观
+B: 情绪稳定
+C: 孤僻自闭
+D: 善于沟通
+ANS: ${aesEncrypt('C')}
+Q: 遇到心理困扰时，正确的做法是？
+A: 寻求帮助
+B: 独自承受
+C: 逃避现实
+D: 暴饮暴食
+ANS: ${aesEncrypt('A')}
+Q: “敬畏生命，行有所止”的意思是？
+A: 尊重生命，谨慎行事
+B: 害怕生命，不敢行动
+C: 忽视生命，肆意妄为
+D: 珍惜生命，无所畏惧
+ANS: ${aesEncrypt('A')}
+Q: 生命的意义不包括？
+A: 为他人奉献
+B: 为社会创造价值
+C: 自私自利
+D: 实现自我成长
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种行为是珍爱生命的表现？
+A: 遵守交通规则
+B: 闯红灯过马路
+C: 私自野外游泳
+D: 打架斗殴
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为是不敬畏生命的表现？
+A: 关爱流浪动物
+B: 虐待小动物
+C: 帮助受伤的人
+D: 尊重他人生命
+ANS: ${aesEncrypt('B')}
+Q: 守护生命安全的前提是？
+A: 增强安全意识
+B: 依赖他人保护
+C: 侥幸心理
+D: 忽视安全提示
+ANS: ${aesEncrypt('A')}
+Q: 提高防护能力的方法不包括？
+A: 学习急救常识
+B: 参加安全培训
+C: 拒绝学习防护知识
+D: 掌握应对灾害的技能
+ANS: ${aesEncrypt('C')}
+Q: 爱护身体需要关注的不包括？
+A: 身体健康信息
+B: 药物过敏情况
+C: 过度追求外貌
+D: 合理饮食
+ANS: ${aesEncrypt('C')}
+Q: 滋养心灵的方式不包括？
+A: 阅读好书
+B: 参与有意义的活动
+C: 沉迷网络游戏
+D: 拓展生命体验
+ANS: ${aesEncrypt('C')}
+Q: “人最宝贵的是生命，生命属于我们只有一次”出自？
+A: 《钢铁是怎样炼成的》
+B: 《论语》
+C: 《孟子》
+D: 《道德经》
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种情况不需要拨打急救电话？
+A: 突发心脏病
+B: 轻微擦伤
+C: 严重骨折
+D: 呼吸骤停
+ANS: ${aesEncrypt('B')}
+Q: 生命的价值在于？
+A: 为他人和社会作贡献
+B: 拥有多少财富
+C: 获得多少荣誉
+D: 享受多少快乐
+ANS: ${aesEncrypt('A')}
+Q: 面对挫折，正确的生命态度是？
+A: 勇敢面对
+B: 消极自杀
+C: 逃避现实
+D: 抱怨命运
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为不利于心理健康？
+A: 与人沟通
+B: 压抑情绪
+C: 积极乐观
+D: 帮助他人
+ANS: ${aesEncrypt('B')}
+Q: 敬畏生命的表现不包括？
+A: 善待身边的每一个人
+B: 伤害他人
+C: 关怀弱势群体
+D: 尊重自然生命
+ANS: ${aesEncrypt('B')}
+Q: 保持规律作息的好处不包括？
+A: 精力充沛
+B: 身体健康
+C: 精神萎靡
+D: 提高学习效率
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种食物不利于身体健康？
+A: 蔬菜水果
+B: 垃圾食品
+C: 粗粮
+D: 优质蛋白
+ANS: ${aesEncrypt('B')}
+Q: 体育锻炼前的必要步骤是？
+A: 科学热身
+B: 直接运动
+C: 不做准备活动
+D: 过度热身
+ANS: ${aesEncrypt('A')}
+Q: 生命的力量体现在？
+A: 战胜困难的勇气
+B: 面对挫折的退缩
+C: 遇到问题的逃避
+D: 碰到挑战的畏惧
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法是对生命的不负责任？
+A: 酒后驾车
+B: 遵守交通规则
+C: 佩戴安全带
+D: 不闯红灯
+ANS: ${aesEncrypt('A')}
+Q: 心理健康的维护方法不包括？
+A: 积极寻求帮助
+B: 自我调节
+C: 封闭自我
+D: 与他人交流
+ANS: ${aesEncrypt('C')}
+Q: 公共场合的安全注意事项不包括？
+A: 查找疏散通道
+B: 忽视安全标志
+C: 遵守安全规则
+D: 保持警惕
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种行为体现了对生命的敬畏？
+A: 参与环保志愿活动
+B: 破坏自然环境
+C: 浪费资源
+D: 伤害野生动物
+ANS: ${aesEncrypt('A')}
+Q: 生命教育的核心是？
+A: 珍爱生命、敬畏生命
+B: 漠视生命
+C: 只关注成绩
+D: 追求物质
+ANS: ${aesEncrypt('A')}
+Q: 人生目标的作用类似于航船的？
+A: 目的地
+B: 船身
+C: 桅杆
+D: 船桨
+ANS: ${aesEncrypt('A')}
+Q: 马克思认为，最蹩脚的建筑师比最灵巧的蜜蜂高明之处在于？
+A: 先构思后建造
+B: 体力更强
+C: 速度更快
+D: 体型更大
+ANS: ${aesEncrypt('A')}
+Q: 人生目标分为？
+A: 长远目标和近期目标
+B: 个人目标和他人目标
+C: 简单目标和复杂目标
+D: 物质目标和精神目标
+ANS: ${aesEncrypt('A')}
+Q: 近期目标与长远目标的关系是？
+A: 近期目标服务于长远目标
+B: 相互独立
+C: 近期目标与长远目标无关
+D: 长远目标服从近期目标
+ANS: ${aesEncrypt('A')}
+Q: 树立正确的人生目标不需要考虑的是？
+A: 社会需要
+B: 自身条件
+C: 他人的攀比对象
+D: 兴趣爱好
+ANS: ${aesEncrypt('C')}
+Q: 钱伟长弃文从理的原因是？
+A: 科学救国
+B: 文科成绩差
+C: 理科容易学
+D: 家人要求
+ANS: ${aesEncrypt('A')}
+Q: 马克思中学毕业作文《青年在选择职业时的考虑》体现的追求是？
+A: 为人类而工作
+B: 追求个人利益
+C: 享受安逸生活
+D: 获得权力地位
+ANS: ${aesEncrypt('A')}
+Q: 人生态度的核心是？
+A: 看待生活、对待人生的心理和行为倾向
+B: 对金钱的态度
+C: 对权力的渴望
+D: 对名誉的追求
+ANS: ${aesEncrypt('A')}
+Q: 积极的人生态度不包括？
+A: 热爱生活
+B: 对未来充满信心
+C: 消极悲观
+D: 看到事物好的一面
+ANS: ${aesEncrypt('C')}
+Q: 苏轼《定风波》中“一蓑烟雨任平生”体现的人生态度是？
+A: 豁达乐观
+B: 消极逃避
+C: 怨天尤人
+D: 随波逐流
+ANS: ${aesEncrypt('A')}
+Q: 下列哪位人物不是在逆境中成就事业的？
+A: 文王（拘而演《周易》）
+B: 仲尼（厄而作《春秋》）
+C: 屈原（放逐，乃赋《离骚》）
+D: 贪图享乐的人
+ANS: ${aesEncrypt('D')}
+Q: “不完满才是人生”是谁的观点？
+A: 季羡林
+B: 苏轼
+C: 孔子
+D: 孟子
+ANS: ${aesEncrypt('A')}
+Q: 对待顺境的正确态度是？
+A: 珍惜机遇，再接再厉
+B: 骄傲自满，停滞不前
+C: 贪图享乐，不思进取
+D: 挥霍浪费，坐享其成
+ANS: ${aesEncrypt('A')}
+Q: 对待逆境的正确态度是？
+A: 迎难而上，勇于克服
+B: 消极退缩，放弃努力
+C: 怨天尤人，自暴自弃
+D: 逃避现实，一蹶不振
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的衡量尺度是？
+A: 对他人和社会的贡献
+B: 拥有的财富多少
+C: 获得的荣誉高低
+D: 权力的大小
+ANS: ${aesEncrypt('A')}
+Q: 劳动的意义不包括？
+A: 创造美好生活
+B: 塑造人的本质
+C: 提升人的能力
+D: 浪费时间和精力
+ANS: ${aesEncrypt('D')}
+Q: 下列哪种劳动不属于创造性劳动？
+A: 科研工作
+B: 简单重复的机械劳动
+C: 艺术创作
+D: 技术革新
+ANS: ${aesEncrypt('B')}
+Q: 其美多吉被评为“最美奋斗者”的原因是？
+A: 坚守雪线邮路，守护邮件安全
+B: 贪图名利
+C: 逃避责任
+D: 追求安逸
+ANS: ${aesEncrypt('A')}
+Q: 雷锋日记中“如果你是一滴水，你是否滋润了一寸土地”体现的是？
+A: 奉献精神
+B: 自私自利
+C: 个人主义
+D: 虚无主义
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的实现途径不包括？
+A: 劳动创造
+B: 奉献社会
+C: 自私自利
+D: 立足岗位
+ANS: ${aesEncrypt('C')}
+Q: 职业没有高低贵贱之分，关键在于？
+A: 为社会作贡献
+B: 收入多少
+C: 权力大小
+D: 地位高低
+ANS: ${aesEncrypt('A')}
+Q: “劳动是人的第一需要”是谁的观点？
+A: 马克思
+B: 孔子
+C: 老子
+D: 墨子
+ANS: ${aesEncrypt('A')}
+Q: 实现人生价值的前提是？
+A: 树立正确的人生目标
+B: 追求个人利益
+C: 等待机遇
+D: 依赖他人
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为体现了劳动精神？
+A: 辛勤劳动、诚实劳动
+B: 投机取巧、不劳而获
+C: 敷衍了事、消极怠工
+D: 逃避劳动、贪图享乐
+ANS: ${aesEncrypt('A')}
+Q: 钱七虎的人生价值体现在？
+A: 为国家和人民安全贡献心血
+B: 追求个人名利
+C: 享受安逸生活
+D: 谋取特权
+ANS: ${aesEncrypt('A')}
+Q: 张桂梅的“只要还有一口气，我就要站在讲台上”体现的是？
+A: 奉献精神
+B: 名利追求
+C: 被迫工作
+D: 盲目坚持
+ANS: ${aesEncrypt('A')}
+Q: 卓嘎、央宗姐妹的事迹体现的是？
+A: 守好祖国每一寸土地
+B: 逃避责任
+C: 追求个人利益
+D: 贪图享乐
+ANS: ${aesEncrypt('A')}
+Q: 人生目标的确立不需要？
+A: 盲目跟风
+B: 自我反思
+C: 了解自身优势
+D: 结合社会需要
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法不利于实现人生价值？
+A: 立足岗位，兢兢业业
+B: 好高骛远，眼高手低
+C: 勤勤恳恳，踏实努力
+D: 不断学习，提升能力
+ANS: ${aesEncrypt('B')}
+Q: 人生态度对人生的影响不包括？
+A: 影响成长和发展
+B: 决定生命长度
+C: 影响应对挫折的方式
+D: 影响生活质量
+ANS: ${aesEncrypt('B')}
+Q: 积极的人生态度能让人？
+A: 看到事物好的一面
+B: 只看到困难和挫折
+C: 消极悲观
+D: 自暴自弃
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种职业体现了“平凡中的伟大”？
+A: 环卫工人
+B: 追求特权的人
+C: 投机取巧的人
+D: 贪图享乐的人
+ANS: ${aesEncrypt('A')}
+Q: 实现人生价值的舞台是？
+A: 新时代的伟大实践
+B: 虚拟的网络世界
+C: 封闭的个人空间
+D: 他人的帮助
+ANS: ${aesEncrypt('A')}
+Q: 人生的“河流”比喻中，目标的作用是？
+A: 指引方向
+B: 阻碍前进
+C: 增加负担
+D: 浪费时间
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为是对人生的不负责任？
+A: 虚度年华
+B: 努力学习
+C: 积极进取
+D: 不断奋斗
+ANS: ${aesEncrypt('A')}
+Q: 确立人生目标的正确顺序是？
+A: 了解自己→结合社会→设定目标
+B: 设定目标→了解自己→结合社会
+C: 结合社会→设定目标→了解自己
+D: 盲目设定→不考虑实际
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的实现不需要？
+A: 坚持不懈的努力
+B: 一蹴而就的幻想
+C: 克服困难的勇气
+D: 脚踏实地的行动
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种思想不利于树立正确的人生目标？
+A: 为祖国贡献力量
+B: 只关注个人利益
+C: 服务社会
+D: 帮助他人
+ANS: ${aesEncrypt('B')}
+Q: 劳动最光荣的原因是？
+A: 劳动创造美好生活
+B: 劳动能赚钱
+C: 劳动能获得荣誉
+D: 劳动能获得权力
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法体现了“在奉献中成就人生”？
+A: 参加志愿服务
+B: 自私自利
+C: 索取回报
+D: 逃避责任
+ANS: ${aesEncrypt('A')}
+Q: 人生的意义在于？
+A: 不断创造和奉献
+B: 享受和索取
+C: 虚度和浪费
+D: 攀比和嫉妒
+ANS: ${aesEncrypt('A')}
+Q: 树立正确的人生态度，不需要做到的是？
+A: 拥有积极心态
+B: 正确对待顺境逆境
+C: 盲目乐观
+D: 勇于担当
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种人物的人生是有价值的？
+A: 为社会进步作出贡献的人
+B: 危害社会的人
+C: 贪图享乐的人
+D: 自私自利的人
+ANS: ${aesEncrypt('A')}
+Q: 实现人生目标的关键是？
+A: 付诸行动
+B: 空想冥想
+C: 等待机遇
+D: 依赖他人
+ANS: ${aesEncrypt('A')}
+Q: 人生路上的“鲜花与荆棘”比喻的是？
+A: 顺境与逆境
+B: 财富与权力
+C: 名誉与地位
+D: 快乐与悲伤
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法体现了“脚踏实地”？
+A: 一步一个脚印实现目标
+B: 好高骛远，不切实际
+C: 投机取巧，急于求成
+D: 半途而废，缺乏坚持
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的大小取决于？
+A: 贡献的大小
+B: 财富的多少
+C: 权力的大小
+D: 地位的高低
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为体现了“勤勤恳恳”的劳动精神？
+A: 认真完成本职工作
+B: 敷衍了事，消极怠工
+C: 投机取巧，不劳而获
+D: 逃避劳动，贪图享乐
+ANS: ${aesEncrypt('A')}`,
+      
+      // 中等题（对应第2个TXT文件：测试题库.txt）
+      medium: `Q: 钱学森认为中学教育对他的成长起到了关键作用，主要是因为中学阶段帮助他？
+A: 仅掌握了基础科学知识
+B: 构建了知识体系和道德观念
+C: 获得了更多物质奖励
+D: 结识了所有影响他的人
+ANS: ${aesEncrypt('B')}
+Q: “人生万事须自为，跬步江山即寥廓”对青少年的启示是？
+A: 要依赖他人帮助实现目标
+B: 要主动追求进步，脚踏实地
+C: 要等待机遇降临
+D: 要忽视小细节，追求大目标
+ANS: ${aesEncrypt('B')}
+Q: 初中生活规划需要结合自身条件，下列不属于自身条件的是？
+A: 兴趣爱好
+B: 性格特点
+C: 家庭财富多少
+D: 能力水平
+ANS: ${aesEncrypt('C')}
+Q: 小蓉模仿他人说话做事却感到疲惫，这说明她？
+A: 缺乏自我认知，盲目跟风
+B: 适应能力强
+C: 善于学习他人优点
+D: 性格内向害羞
+ANS: ${aesEncrypt('A')}
+Q: 改正缺点时“从最容易的开始”，其目的是？
+A: 逃避困难
+B: 积累成就感，增强动力
+C: 忽视重要缺点
+D: 节省时间
+ANS: ${aesEncrypt('B')}
+Q: 梦想与现实之间的桥梁是？
+A: 空想
+B: 努力
+C: 运气
+D: 他人帮助
+ANS: ${aesEncrypt('B')}
+Q: 毛泽东少年时期如饥似渴阅读，体现了他的什么品质？
+A: 贪玩好动
+B: 热爱学习，追求知识
+C: 逃避劳动
+D: 只关注文学作品
+ANS: ${aesEncrypt('B')}
+Q: 学习的“理解”层次是指？
+A: 单纯记忆知识点
+B: 结合经验消化吸收知识
+C: 机械重复练习
+D: 忘记已学内容
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种做法体现了“做更好的自己”？
+A: 因自己的缺点而自卑
+B: 接纳差异，发挥自身音乐天赋
+C: 盲目模仿同学的所有行为
+D: 拒绝承认自己的不足
+ANS: ${aesEncrypt('B')}
+Q: 面对他人不客观的贬损评价，正确的应对方式是？
+A: 激烈反驳，与人争吵
+B: 理性思考后平静拒绝
+C: 全盘接受，自我否定
+D: 默默承受，一蹶不振
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段“自我意识增强”的表现是？
+A: 事事依赖父母决定
+B: 主动规划未来，关注他人评价
+C: 不愿与他人交流
+D: 完全忽视他人看法
+ANS: ${aesEncrypt('B')}
+Q: “凡事预则立，不预则废”应用于初中生活，具体做法是？
+A: 制定详细的学习和生活计划
+B: 随波逐流，没有目标
+C: 只关注眼前，不考虑长远
+D: 频繁改变计划，缺乏坚持
+ANS: ${aesEncrypt('A')}
+Q: 认识自己是一个长期过程，下列能帮助我们深入认识自己的是？
+A: 仅通过一次自画像活动
+B: 结合自我反思和他人评价
+C: 拒绝参加集体活动
+D: 盲目自信，不听建议
+ANS: ${aesEncrypt('B')}
+Q: 少年梦想的特点是既要有个人追求，又要？
+A: 与中国梦相结合
+B: 只关注个人利益
+C: 脱离现实
+D: 追求物质享受
+ANS: ${aesEncrypt('A')}
+Q: 学习“运用”层次的核心是？
+A: 把理解的知识转化为能力
+B: 死记硬背知识点
+C: 仅理解不实践
+D: 忘记所学知识
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为不利于实现梦想？
+A: 养成良好学习习惯
+B: 积极参加社会实践
+C: 缺乏自律，拖延成性
+D: 掌握科学学习方法
+ANS: ${aesEncrypt('C')}
+Q: 钱学森归国后首先探望中学母校，说明他？
+A: 怀念中学时光，重视中学教育
+B: 只是顺路参观
+C: 想炫耀自己的成就
+D: 对大学教育不满意
+ANS: ${aesEncrypt('A')}
+Q: 正确对待顺境和逆境，对实现梦想的意义是？
+A: 顺境中骄傲，逆境中放弃
+B: 顺境中珍惜，逆境中坚持
+C: 顺境中懈怠，逆境中抱怨
+D: 顺境中挥霍，逆境中逃避
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段规划个人发展目标，不需要考虑的是？
+A: 社会发展需要
+B: 自身兴趣和能力
+C: 他人的攀比心理
+D: 老师和家长的建议
+ANS: ${aesEncrypt('C')}
+Q: “学习是半径，半径越大，世界越广阔”说明学习能？
+A: 扩大视野，提升能力
+B: 增加负担，限制自由
+C: 浪费时间，影响娱乐
+D: 让世界变得复杂
+ANS: ${aesEncrypt('A')}
+Q: 做有梦想的少年，需要具备的品质不包括？
+A: 坚定信念
+B: 刻苦学习
+C: 强健体魄
+D: 好高骛远
+ANS: ${aesEncrypt('D')}
+Q: 下列哪种说法体现了对梦想的正确认识？
+A: 梦想实现不了就毫无意义
+B: 梦想即使不能实现，也能引领方向
+C: 梦想与现实永远无法相交
+D: 现实一定会打败梦想
+ANS: ${aesEncrypt('B')}
+Q: 初中生活与小学相比，自我发展的重点是？
+A: 被动接受知识
+B: 主动发现和认识自己
+C: 依赖老师和家长
+D: 只关注成绩
+ANS: ${aesEncrypt('B')}
+Q: 改正缺点的方法中，“请自己信任的人协助”是为了？
+A: 推卸责任
+B: 获得监督和支持
+C: 让他人代替自己努力
+D: 炫耀自己的决心
+ANS: ${aesEncrypt('B')}
+Q: 青少年追求政治进步的“人生三部曲”不包括？
+A: 入队
+B: 入团
+C: 入党
+D: 入职
+ANS: ${aesEncrypt('D')}
+Q: 下列哪种行为体现了“珍视当下”？
+A: 沉迷过去的成绩，不思进取
+B: 把握眼前机遇，努力学习
+C: 幻想未来，不付诸行动
+D: 逃避现实，沉迷游戏
+ANS: ${aesEncrypt('B')}
+Q: 认识自己的“自画像”活动，主要目的是？
+A: 向同学炫耀自己
+B: 更客观地了解自己
+C: 批评他人的不足
+D: 完成老师布置的任务
+ANS: ${aesEncrypt('B')}
+Q: 他人对自己的评价中，我们应该重点关注的是？
+A: 客观公正、有助于成长的评价
+B: 恶意的贬损和虚假的吹捧
+C: 片面的、情绪化的评价
+D: 随波逐流的大众评价
+ANS: ${aesEncrypt('A')}
+Q: 实现梦想需要“善于学习”，具体做法不包括？
+A: 发现并保持学习兴趣
+B: 养成良好学习习惯
+C: 掌握科学学习方法
+D: 盲目刷题，忽视理解
+ANS: ${aesEncrypt('D')}
+Q: 初中阶段的“拔节孕穗期”，强调的是青少年要注重？
+A: 身体快速发育
+B: 世界观、人生观、价值观的形成
+C: 追求物质享受
+D: 逃避责任和压力
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种做法体现了“努力”的科学方法？
+A: 盲目蛮干，缺乏计划
+B: 珍视团队合作，相互支持
+C: 单打独斗，拒绝帮助
+D: 三天打鱼，两天晒网
+ANS: ${aesEncrypt('B')}
+Q: 梦想与个人价值的关系是？
+A: 梦想能引领个人价值的实现
+B: 梦想与个人价值无关
+C: 个人价值不需要梦想支撑
+D: 梦想会阻碍个人价值实现
+ANS: ${aesEncrypt('A')}
+Q: 毛泽东少年时期阅读的《三国演义》《水浒传》等书籍，对他的影响是？
+A: 只增加了娱乐趣味
+B: 积累知识，开阔视野
+C: 影响了正常学习
+D: 让他沉迷小说
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种行为不利于构建和谐的师生关系？
+A: 尊重老师，主动沟通
+B: 隐瞒想法，拒绝交流
+C: 虚心请教，接受指导
+D: 理解老师的辛苦
+ANS: ${aesEncrypt('B')}
+Q: 学习的“记忆、理解、运用”三个层次的关系是？
+A: 相互独立，互不关联
+B: 记忆是基础，理解是关键，运用是目的
+C: 只需记忆，无需理解和运用
+D: 只需运用，无需记忆和理解
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段要成为“有理想、敢担当、能吃苦、肯奋斗”的中学生，需要？
+A: 只关注个人利益
+B: 在担当中历练，在尽责中成长
+C: 逃避困难，贪图享乐
+D: 依赖他人，缺乏独立
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种说法是错误的？
+A: 中学教育为钱学森的成长打下了坚实基础
+B: 认识自己是一个长期逐步深入的过程
+C: 梦想的实现不需要努力奋斗
+D: 学习是成就梦想的重要路径
+ANS: ${aesEncrypt('C')}
+Q: 规划初中生活时，“结合社会需要”的意义是？
+A: 让目标更具现实意义和价值
+B: 违背个人兴趣，增加负担
+C: 让目标变得遥不可及
+D: 忽视个人发展的可能性
+ANS: ${aesEncrypt('A')}
+Q: 面对他人的批评，正确的态度是？
+A: 虚心接受，反思改进
+B: 抵触反感，拒不接受
+C: 怀恨在心，伺机报复
+D: 无所谓，不放在心上
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为体现了“做更好的自己”？
+A: 因身材不够高大而自卑
+B: 发挥自己的绘画天赋，参加比赛
+C: 看到同学擅长跑步就盲目训练
+D: 拒绝承认自己的数学短板
+ANS: ${aesEncrypt('B')}
+Q: 梦想与中国梦的关系是？
+A: 个人梦想融入中国梦，才能更有价值
+B: 个人梦想与中国梦相互割裂
+C: 中国梦依赖个人梦想，个人梦想无需考虑中国梦
+D: 个人梦想大于中国梦
+ANS: ${aesEncrypt('A')}
+Q: 初中阶段的学习任务，不仅是掌握知识，还包括？
+A: 提升思想品德和精神境界
+B: 只追求高分
+C: 逃避社会实践
+D: 忽视人际交往
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法体现了“主动学习”？
+A: 上课走神，作业抄袭
+B: 主动预习，请教老师问题
+C: 被动接受，不主动思考
+D: 拒绝参加学习活动
+ANS: ${aesEncrypt('B')}
+Q: 做有梦想的少年，应该将个人梦想与什么相结合？
+A: 国家和人民的需要
+B: 个人的自私欲望
+C: 游戏等级提升
+D: 明星八卦
+ANS: ${aesEncrypt('A')}
+Q: 认识自己的过程中，应该避免的是？
+A: 自我反思
+B: 客观评价
+C: 盲目自大
+D: 听取他人建议
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种做法不利于初中生活规划的落实？
+A: 制定具体计划，逐步执行
+B: 缺乏自律，拖延成性
+C: 及时调整方向，灵活应对
+D: 坚持到底，不轻易放弃
+ANS: ${aesEncrypt('B')}
+Q: “努力成就梦想”体现的哲学道理是？
+A: 量变积累到一定程度会引起质变
+B: 梦想可以凭空实现
+C: 努力不一定有回报
+D: 梦想与努力无关
+ANS: ${aesEncrypt('A')}
+Q: 钱学森的中学老师对他的影响，体现了教师职业的什么价值？
+A: 教书育人，塑造灵魂
+B: 只是传授知识
+C: 获得物质回报
+D: 享受特权
+ANS: ${aesEncrypt('A')}
+Q: 青少年在实现梦想的过程中，对待挫折的正确态度是？
+A: 迎难而上，勇于克服
+B: 消极退缩，放弃努力
+C: 怨天尤人，自暴自弃
+D: 逃避现实，一蹶不振
+ANS: ${aesEncrypt('A')}
+Q: “天下之本在家”强调家庭对社会的作用是？
+A: 家庭是社会的基本细胞，影响社会和谐
+B: 家庭与社会无关
+C: 家庭利益高于社会利益
+D: 社会发展与家庭无关
+ANS: ${aesEncrypt('A')}
+Q: 孔繁森两次进藏工作，勤政为民，体现了他的什么品质？
+A: 自私自利
+B: 爱岗敬业，无私奉献
+C: 追求名利
+D: 逃避责任
+ANS: ${aesEncrypt('B')}
+Q: 家庭文明建设的重要性不包括？
+A: 促进社会文明
+B: 国家发展的基点
+C: 引发家庭矛盾
+D: 民族进步的支撑
+ANS: ${aesEncrypt('C')}
+Q: 孔子的“有教无类”教育思想，对师生关系的启示是？
+A: 教师应平等对待所有学生
+B: 教师应偏爱成绩好的学生
+C: 教师应歧视成绩差的学生
+D: 学生应服从教师的所有安排
+ANS: ${aesEncrypt('A')}
+Q: 陶行知主张“生活即教育”，其核心是？
+A: 教育脱离生活实际
+B: 教育应贴近生活，培养生活力
+C: 生活与教育无关
+D: 只关注书本知识
+ANS: ${aesEncrypt('B')}
+Q: 教育家精神中“乐教爱生、甘于奉献的仁爱之心”，要求教师？
+A: 只关注自己的利益
+B: 热爱教育，关爱学生
+C: 敷衍教学，追求名利
+D: 严格要求学生，忽视关爱
+ANS: ${aesEncrypt('B')}
+Q: 和谐师生关系的基础是相互尊重，下列做法体现这一点的是？
+A: 学生当面顶撞老师
+B: 老师忽视学生的想法
+C: 师生平等沟通，相互理解
+D: 学生隐瞒自己的观点
+ANS: ${aesEncrypt('C')}
+Q: 面对不同风格的老师，学生的正确做法是？
+A: 挑剔指责，拒绝适应
+B: 尊重差异，善于学习
+C: 区别对待，偏爱喜欢的老师
+D: 背后抱怨，消极应付
+ANS: ${aesEncrypt('B')}
+Q: 王亚南尊重口头表达能力较差的老师，体现了他的什么品质？
+A: 虚伪逢迎
+B: 尊重他人，善于发现优点
+C: 盲目崇拜
+D: 投机取巧
+ANS: ${aesEncrypt('B')}
+Q: 友谊的真谛是心灵的相遇，下列哪种友谊体现了这一点？
+A: 基于物质条件的交往
+B: 志同道合，心灵契合
+C: 相互利用，利益交换
+D: 表面和谐，背后算计
+ANS: ${aesEncrypt('B')}
+Q: 《论语》中“益者三友”不包括？
+A: 友直
+B: 友谅
+C: 友多闻
+D: 友便佞
+ANS: ${aesEncrypt('D')}
+Q: 马克思和恩格斯的友谊，体现了友谊的什么特质？
+A: 相互支持，共同奋斗
+B: 相互利用，利益交换
+C: 表面和谐，内心疏离
+D: 一方依赖另一方，不平等
+ANS: ${aesEncrypt('A')}
+Q: 建立真挚友谊的方法不包括？
+A: 敞开心扉，主动表达
+B: 真诚热情，用心培育
+C: 封闭自我，等待友谊降临
+D: 慎重选择，结好伴
+ANS: ${aesEncrypt('C')}
+Q: 集体的联结度与下列哪个因素密切相关？
+A: 成员间的关联程度
+B: 成员的家庭背景差异
+C: 成员的年龄大小
+D: 成员的身高体重
+ANS: ${aesEncrypt('A')}
+Q: 集体生活成就个人，主要体现在？
+A: 让个人变得自私自利
+B: 提高自理能力和人际交往能力
+C: 限制个人发展
+D: 让个人依赖集体，失去独立
+ANS: ${aesEncrypt('B')}
+Q: 美好集体的愿景不包括？
+A: 共同的梦想和目标
+B: 正确的价值观
+C: 各自为政，缺乏团结
+D: 一致的追求
+ANS: ${aesEncrypt('C')}
+Q: 建设美好集体，确定共同愿景的意义是？
+A: 引领成员团结一致，开拓进取
+B: 限制成员的个性发展
+C: 增加成员的负担
+D: 让集体缺乏活力
+ANS: ${aesEncrypt('A')}
+Q: 集体主义原则的核心是？
+A: 国家利益、集体利益、个人利益根本一致
+B: 个人利益高于一切
+C: 集体利益无视个人正当利益
+D: 国家利益服从个人利益
+ANS: ${aesEncrypt('A')}
+Q: 个人意愿与集体要求发生矛盾时，正确的做法是？
+A: 坚持个人意愿，脱离集体
+B: 找到平衡点，化解矛盾
+C: 消极抵抗，敷衍了事
+D: 抱怨集体，指责他人
+ANS: ${aesEncrypt('B')}
+Q: 集体生活中的合作策略不包括？
+A: 坦诚交流，彼此信任
+B: 推卸责任，坐享其成
+C: 主动支持，相互帮助
+D: 遵守规则，明确分工
+ANS: ${aesEncrypt('B')}
+Q: “人者固非可孤立生存于世界也，必有群然后人格始能立”强调的是？
+A: 集体生活对个人成长的重要性
+B: 个人独立于集体的重要性
+C: 逃避集体的重要性
+D: 孤立生存的可能性
+ANS: ${aesEncrypt('A')}
+Q: 班级信箱的设立，主要目的是？
+A: 传递八卦消息
+B: 促进师生交流，了解学生心声
+C: 抱怨老师和同学
+D: 形式主义，没有实际意义
+ANS: ${aesEncrypt('B')}
+Q: 班级文化建设的意义是？
+A: 增强班级凝聚力，营造良好氛围
+B: 搞形式主义，浪费时间
+C: 引发班级矛盾
+D: 让班级显得与众不同
+ANS: ${aesEncrypt('A')}
+Q: 集体事务细分给每个人，是为了？
+A: 增加个人负担
+B: 让每个人都参与集体建设，增强归属感
+C: 推卸责任
+D: 制造矛盾
+ANS: ${aesEncrypt('B')}
+Q: 师生关系的特点是教学相长，下列做法体现这一点的是？
+A: 老师只传授知识，学生被动接受
+B: 师生相互学习，共同进步
+C: 老师权威至上，学生绝对服从
+D: 学生质疑老师，不尊重师长
+ANS: ${aesEncrypt('B')}
+Q: 教师的职责不包括？
+A: 传播知识、思想和真理
+B: 塑造灵魂、生命和新人
+C: 谋取私利，享受特权
+D: 教书育人，传承文明
+ANS: ${aesEncrypt('C')}
+Q: 与老师交往的正确做法是？
+A: 主动沟通，尊重老师
+B: 隐瞒想法，害怕批评
+C: 当面一套，背后一套
+D: 盲目依赖，缺乏独立
+ANS: ${aesEncrypt('A')}
+Q: 友谊能够超越物质条件、家庭背景等，体现了友谊的？
+A: 功利性
+B: 虚伪性
+C: 纯粹性
+D: 复杂性
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种行为不利于集体团结？
+A: 相互关爱，相互支持
+B: 相互排斥，各自为政
+C: 相互帮助，共同进步
+D: 相互理解，彼此包容
+ANS: ${aesEncrypt('B')}
+Q: 美好集体的特征不包括？
+A: 民主公正
+B: 充满活力
+C: 冷漠自私
+D: 善于合作
+ANS: ${aesEncrypt('C')}
+Q: 集体生活中，正确的竞争态度是？
+A: 相互促进，共同提高
+B: 相互打压，嫉妒他人
+C: 隐瞒优势，害怕他人超越
+D: 不择手段，争夺第一
+ANS: ${aesEncrypt('A')}
+Q: 表达对家人的爱，恰当的方式是？
+A: 大声说出“我爱你”
+B: 冷战不沟通
+C: 指责家人的不足
+D: 忽视家人的关爱
+ANS: ${aesEncrypt('A')}
+Q: 与朋友发生矛盾时，正确的做法是？
+A: 协商宽容，换位思考
+B: 断绝来往，伺机报复
+C: 到处抱怨，说朋友坏话
+D: 坚持己见，不妥协
+ANS: ${aesEncrypt('A')}
+Q: 集体中的每个人应该主动承担责任，这是因为？
+A: 责任是别人强加的
+B: 承担责任能促进集体发展，实现个人价值
+C: 推卸责任能获得更多利益
+D: 承担责任会吃亏
+ANS: ${aesEncrypt('B')}
+Q: 家庭和睦对社会的影响是？
+A: 家庭和睦则社会安定
+B: 家庭和睦与社会无关
+C: 家庭和睦会影响社会发展
+D: 社会安定与家庭无关
+ANS: ${aesEncrypt('A')}
+Q: 孔子的“因材施教”教育思想，要求教师？
+A: 对所有学生采用相同的教学方法
+B: 根据学生的差异采用不同的教学方法
+C: 只关注成绩好的学生
+D: 忽视学生的个性差异
+ANS: ${aesEncrypt('B')}
+Q: 陶行知的“千教万教，教人求真；千学万学，学做真人”，强调的是？
+A: 教育的核心是培养真诚的人
+B: 教育的核心是追求分数
+C: 学习的核心是投机取巧
+D: 学习的核心是表面功夫
+ANS: ${aesEncrypt('A')}
+Q: 友谊的呵护需要坦诚交流，下列做法体现这一点的是？
+A: 隐瞒自己的真实想法
+B: 真诚表达自己的观点，倾听朋友的意见
+C: 敷衍朋友，不认真沟通
+D: 背后议论朋友的不足
+ANS: ${aesEncrypt('B')}
+Q: 集体生活中，个人与集体的关系是？
+A: 个人利益高于集体利益
+B: 集体利益高于个人利益，忽视个人正当利益
+C: 个人与集体相互依存，相互促进
+D: 个人与集体相互对立
+ANS: ${aesEncrypt('C')}
+Q: 下列哪种行为体现了对教师的尊重？
+A: 上课认真听讲，主动问好
+B: 上课走神，随意打断老师讲课
+C: 不完成老师布置的任务
+D: 背后议论老师的缺点
+ANS: ${aesEncrypt('A')}
+Q: 家庭是“人们梦想启航的地方”，这说明家庭对个人的影响是？
+A: 家庭是个人成长的重要环境
+B: 家庭限制个人梦想的实现
+C: 个人梦想与家庭无关
+D: 家庭是个人梦想的唯一来源
+ANS: ${aesEncrypt('A')}
+Q: 马克思和恩格斯的友谊之所以伟大，是因为？
+A: 他们相互利用，追求利益
+B: 他们为共同的事业相互支持，无私奉献
+C: 他们地位显赫，财富众多
+D: 他们从不发生矛盾
+ANS: ${aesEncrypt('B')}
+Q: 人的生命由肉体和精神构成，下列体现精神层面生命价值的是？
+A: 身体健康，无疾病
+B: 为社会作贡献，实现人生意义
+C: 拥有丰富的物质财富
+D: 外貌出众，受人喜爱
+ANS: ${aesEncrypt('B')}
+Q: “天地之间人为贵”强调人的生命宝贵，下列做法体现这一点的是？
+A: 漠视他人生命，肆意伤害
+B: 珍惜自己和他人的生命
+C: 轻生自杀，放弃生命
+D: 冒险行为，不顾安全
+ANS: ${aesEncrypt('B')}
+Q: 敬畏生命要求我们“推己及人”，具体做法是？
+A: 只珍惜自己的生命，忽视他人
+B: 从珍惜自己的生命走向关爱他人
+C: 自私自利，不顾他人安危
+D: 对他人的生命漠不关心
+ANS: ${aesEncrypt('B')}
+Q: 2008年汶川地震后的救援行动，体现了？
+A: 生命至上，竭尽全力保护生命
+B: 生命无关紧要，重视物质救援
+C: 救援是形式主义
+D: 只关注救援人员的安全
+ANS: ${aesEncrypt('A')}
+Q: 全国防灾减灾日定为5月12日，目的是？
+A: 纪念汶川地震遇难者，增强防灾减灾意识
+B: 只是一个普通的日期
+C: 提醒人们忘记灾难
+D: 增加社会负担
+ANS: ${aesEncrypt('A')}
+Q: 生命安全是创造美好生活的前提，下列做法保障生命安全的是？
+A: 闯红灯过马路
+B: 遵守交通规则，增强安全意识
+C: 私自野外游泳
+D: 打架斗殴，危害他人安全
+ANS: ${aesEncrypt('B')}
+Q: 公共卫生安全包括疾病预防控制、环境卫生等，下列做法不利于公共卫生安全的是？
+A: 勤洗手，勤通风
+B: 随地吐痰，乱扔垃圾
+C: 做好免疫接种
+D: 使用公筷，实行分餐制
+ANS: ${aesEncrypt('B')}
+Q: 面对自然灾害，提高防护能力的关键是？
+A: 掌握科学的自救和互救方法
+B: 惊慌失措，盲目逃生
+C: 等待他人救援，不主动行动
+D: 放弃希望，消极应对
+ANS: ${aesEncrypt('A')}
+Q: 心肺复苏的最佳抢救时间是4分钟内，这说明？
+A: 生命宝贵，抢救要争分夺秒
+B: 4分钟后抢救一定无效
+C: 不需要学习心肺复苏技能
+D: 生命可以随意对待
+ANS: ${aesEncrypt('A')}
+Q: 爱护身体需要养成良好的生活习惯，下列做法不恰当的是？
+A: 适量运动，合理饮食
+B: 规律作息，不熬夜
+C: 滥用药物，忽视体检
+D: 注意卫生，预防疾病
+ANS: ${aesEncrypt('C')}
+Q: 保持身心健康，滋养心灵的方式不包括？
+A: 阅读好书，汲取精神养料
+B: 参与有意义的活动，拓展生命体验
+C: 沉迷网络游戏，逃避现实
+D: 与他人沟通，获得心理支持
+ANS: ${aesEncrypt('C')}
+Q: 遇到心理困扰时，正确的应对方式是？
+A: 独自承受，不寻求帮助
+B: 积极寻求父母、老师或心理咨询师的帮助
+C: 暴饮暴食，发泄情绪
+D: 逃避现实，沉迷幻想
+ANS: ${aesEncrypt('B')}
+Q: “敬畏生命，行有所止”的含义是？
+A: 尊重生命，谨慎对待生命关系和问题
+B: 害怕生命，不敢有所作为
+C: 忽视生命，肆意妄为
+D: 珍惜自己的生命，忽视他人
+ANS: ${aesEncrypt('A')}
+Q: 生命的意义在于为他人和社会作贡献，下列做法体现这一点的是？
+A: 自私自利，只关注个人利益
+B: 参加志愿服务，帮助他人
+C: 危害社会，谋取私利
+D: 虚度年华，无所事事
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种行为是珍爱生命的表现？
+A: 遵守交通规则，不闯红灯
+B: 酒后驾车，漠视安全
+C: 私自去野外游泳，冒险逞强
+D: 打架斗殴，伤害自己和他人
+ANS: ${aesEncrypt('A')}
+Q: 敬畏生命的表现不包括？
+A: 善待身边的每一个人
+B: 尊重自然生命，爱护动植物
+C: 关怀弱势群体
+D: 伤害他人，满足自己的私欲
+ANS: ${aesEncrypt('D')}
+Q: 守护生命安全，增强安全意识的具体做法是？
+A: 忽视安全提示，心存侥幸
+B: 进入公共场所后查找安全疏散通道
+C: 不学习安全知识，盲目自信
+D: 冒险操作，忽视危险
+ANS: ${aesEncrypt('B')}
+Q: 提高防护能力，需要学习的急救常识不包括？
+A: 心肺复苏
+B: 止血包扎
+C: 火灾逃生
+D: 如何制造危险
+ANS: ${aesEncrypt('D')}
+Q: 爱护身体，需要关注的健康信息不包括？
+A: 自己的药物过敏情况
+B: 家庭成员的健康状况
+C: 最新的娱乐八卦
+D: 自己的身体发育情况
+ANS: ${aesEncrypt('C')}
+Q: 滋养心灵，需要保持的心理状态是？
+A: 积极乐观，情绪稳定
+B: 消极悲观，情绪低落
+C: 孤僻自闭，不愿交流
+D: 嫉妒他人，心态失衡
+ANS: ${aesEncrypt('A')}
+Q: “人最宝贵的是生命，生命属于我们只有一次”出自《钢铁是怎样炼成的》，这句话的启示是？
+A: 生命短暂，要珍惜并实现其价值
+B: 生命可以重来，不必珍惜
+C: 生命不重要，追求物质享受才是关键
+D: 生命是负担，可以随意放弃
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种情况需要拨打急救电话？
+A: 轻微擦伤
+B: 突发心脏病，呼吸骤停
+C: 不小心摔倒，无明显不适
+D: 口渴想喝水
+ANS: ${aesEncrypt('B')}
+Q: 生命的价值衡量尺度是对他人和社会的贡献，这说明？
+A: 贡献越大，生命价值越大
+B: 财富越多，生命价值越大
+C: 权力越大，生命价值越大
+D: 地位越高，生命价值越大
+ANS: ${aesEncrypt('A')}
+Q: 面对挫折，正确的生命态度是？
+A: 勇敢面对，积极克服
+B: 消极自杀，逃避现实
+C: 抱怨命运，自暴自弃
+D: 一蹶不振，放弃努力
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为不利于心理健康？
+A: 与人沟通，释放压力
+B: 压抑情绪，不表达感受
+C: 积极参加集体活动
+D: 帮助他人，获得成就感
+ANS: ${aesEncrypt('B')}
+Q: 敬畏生命，就要坚持人民至上、生命至上，这意味着？
+A: 生命比金钱、权势等更重要
+B: 金钱、权势比生命更重要
+C: 可以为了金钱牺牲生命
+D: 可以为了权势忽视生命
+ANS: ${aesEncrypt('A')}
+Q: 保持规律作息的好处是？
+A: 精力充沛，身体健康
+B: 精神萎靡，影响学习
+C: 免疫力下降，容易生病
+D: 情绪波动，难以控制
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种食物有利于身体健康？
+A: 蔬菜水果，富含维生素
+B: 垃圾食品，高油高糖
+C: 过期食品，低价实惠
+D: 辛辣刺激食品，口感好
+ANS: ${aesEncrypt('A')}
+Q: 体育锻炼前进行科学热身的目的是？
+A: 增加运动难度
+B: 预防运动损伤，激活身体
+C: 浪费时间，影响运动
+D: 让身体感到疲惫
+ANS: ${aesEncrypt('B')}
+Q: 生命的力量体现在？
+A: 面对困难的退缩
+B: 战胜挫折的勇气和毅力
+C: 遇到问题的逃避
+D: 碰到挑战的畏惧
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种做法是对生命的不负责任？
+A: 酒后驾车，危害自己和他人
+B: 佩戴安全带，遵守交通规则
+C: 定期体检，关注健康
+D: 学习急救知识，保护自己和他人
+ANS: ${aesEncrypt('A')}
+Q: 心理健康的维护方法包括？
+A: 积极寻求帮助，自我调节
+B: 封闭自我，拒绝交流
+C: 暴饮暴食，发泄情绪
+D: 沉迷游戏，逃避现实
+ANS: ${aesEncrypt('A')}
+Q: 公共场合的安全注意事项包括？
+A: 查找疏散通道，熟悉环境
+B: 忽视安全标志，随意走动
+C: 拥挤打闹，不顾他人
+D: 携带危险物品
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为体现了对生命的敬畏？
+A: 参与环保志愿活动，保护自然
+B: 破坏自然环境，伤害野生动物
+C: 浪费资源，不顾后代
+D: 污染环境，危害健康
+ANS: ${aesEncrypt('A')}
+Q: 生命教育的核心是珍爱生命、敬畏生命，其目的是？
+A: 让学生害怕生命，不敢行动
+B: 让学生珍惜生命，实现人生价值
+C: 让学生忽视生命，肆意妄为
+D: 让学生只关注自己的生命
+ANS: ${aesEncrypt('B')}
+Q: 面对突发灾害，正确的逃生方法是？
+A: 乘坐电梯，快速逃生
+B: 弯腰捂鼻，沿疏散通道有序撤离
+C: 惊慌失措，盲目奔跑
+D: 贪恋财物，延误逃生
+ANS: ${aesEncrypt('B')}
+Q: 保持身心健康，需要做到的是？
+A: 身体和心理都健康，相互促进
+B: 只关注身体健康，忽视心理
+C: 只关注心理健康，忽视身体
+D: 身体和心理都忽视
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为体现了“仁者爱人”的敬畏生命理念？
+A: 关爱他人，帮助有需要的人
+B: 冷漠自私，不顾他人安危
+C: 歧视弱势群体
+D: 伤害他人，满足自己
+ANS: ${aesEncrypt('A')}
+Q: 生命的独特性体现在每个人的指纹、性格等不同，这启示我们？
+A: 要尊重个体差异，做更好的自己
+B: 要模仿他人，追求一致
+C: 要歧视与自己不同的人
+D: 要忽视自己的独特性
+ANS: ${aesEncrypt('A')}
+Q: 马克思认为“最蹩脚的建筑师比最灵巧的蜜蜂高明”，原因是？
+A: 建筑师体型更大
+B: 建筑师先构思后建造，有明确目标
+C: 蜜蜂的劳动更辛苦
+D: 建筑师的劳动更轻松
+ANS: ${aesEncrypt('B')}
+Q: 人生目标分为长远目标和近期目标，二者的关系是？
+A: 近期目标服务于长远目标
+B: 相互独立，没有关联
+C: 长远目标服从近期目标
+D: 近期目标与长远目标冲突
+ANS: ${aesEncrypt('A')}
+Q: 钱伟长弃文从理的根本原因是？
+A: 文科成绩差，理科容易学
+B: 家人强迫，不得不从
+C: 国家危难，立志科学救国
+D: 追求个人名利
+ANS: ${aesEncrypt('C')}
+Q: 马克思中学毕业作文《青年在选择职业时的考虑》体现的追求是？
+A: 为人类幸福而工作
+B: 追求个人利益最大化
+C: 享受安逸生活
+D: 获得权力地位
+ANS: ${aesEncrypt('A')}
+Q: 积极的人生态度对人生发展的影响是？
+A: 看到事物好的一面，热爱生活
+B: 只看到困难，消极悲观
+C: 遇到挫折就放弃
+D: 顺境中骄傲，逆境中抱怨
+ANS: ${aesEncrypt('A')}
+Q: 苏轼《定风波》中“一蓑烟雨任平生”体现的人生态度是？
+A: 豁达乐观，不畏挫折
+B: 消极逃避，怨天尤人
+C: 随波逐流，没有主见
+D: 贪图享乐，害怕困难
+ANS: ${aesEncrypt('A')}
+Q: 司马迁在《报任安书》中列举的圣贤事例，说明逆境能？
+A: 摧毁人的意志，让人放弃
+B: 激发人的潜能，成就事业
+C: 让人一蹶不振，无所作为
+D: 让人抱怨命运，自暴自弃
+ANS: ${aesEncrypt('B')}
+Q: “不完满才是人生”的观点启示我们？
+A: 接受人生的不完美，积极面对
+B: 追求完美，否则人生无意义
+C: 抱怨人生的不完美，消极对待
+D: 放弃努力，接受平庸
+ANS: ${aesEncrypt('A')}
+Q: 对待顺境的正确态度是？
+A: 珍惜机遇，再接再厉
+B: 骄傲自满，停滞不前
+C: 贪图享乐，不思进取
+D: 挥霍浪费，坐享其成
+ANS: ${aesEncrypt('A')}
+Q: 对待逆境的正确态度是？
+A: 迎难而上，勇于克服
+B: 消极退缩，放弃努力
+C: 怨天尤人，自暴自弃
+D: 逃避现实，一蹶不振
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的衡量尺度是？
+A: 对他人和社会的贡献
+B: 拥有的财富多少
+C: 获得的荣誉高低
+D: 权力的大小
+ANS: ${aesEncrypt('A')}
+Q: 劳动的意义不包括？
+A: 创造美好生活
+B: 塑造人的本质，提升能力
+C: 改变社会关系
+D: 浪费时间和精力
+ANS: ${aesEncrypt('D')}
+Q: 其美多吉被评为“最美奋斗者”，是因为他？
+A: 坚守雪线邮路，守护邮件安全，爱岗敬业
+B: 贪图名利，追求曝光
+C: 逃避责任，敷衍工作
+D: 享受特权，高人一等
+ANS: ${aesEncrypt('A')}
+Q: 雷锋日记中“如果你是一滴水，你是否滋润了一寸土地”体现的是？
+A: 奉献精神，关爱他人
+B: 自私自利，个人主义
+C: 虚无主义，毫无追求
+D: 功利主义，追求回报
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的实现途径不包括？
+A: 立足岗位，辛勤劳动
+B: 奉献社会，帮助他人
+C: 自私自利，损害他人
+D: 不断学习，提升能力
+ANS: ${aesEncrypt('C')}
+Q: 职业没有高低贵贱之分，关键在于？
+A: 收入多少
+B: 为社会作贡献的大小
+C: 权力大小
+D: 地位高低
+ANS: ${aesEncrypt('B')}
+Q: “劳动是人的第一需要”是马克思的观点，其含义是？
+A: 劳动是被迫的，让人痛苦
+B: 劳动能实现人的价值，让人充实
+C: 劳动是多余的，让人疲惫
+D: 劳动是为了生存，别无选择
+ANS: ${aesEncrypt('B')}
+Q: 实现人生价值的前提是？
+A: 树立正确的人生目标
+B: 追求个人利益最大化
+C: 等待机遇降临
+D: 依赖他人帮助
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为体现了劳动精神？
+A: 辛勤劳动、诚实劳动、创造性劳动
+B: 投机取巧、不劳而获
+C: 敷衍了事、消极怠工
+D: 逃避劳动、贪图享乐
+ANS: ${aesEncrypt('A')}
+Q: 钱七虎的人生价值体现在？
+A: 为国家和人民安全贡献毕生心血
+B: 追求个人名利，享受特权
+C: 逃避责任，贪图安逸
+D: 谋取私利，损害国家利益
+ANS: ${aesEncrypt('A')}
+Q: 张桂梅“只要还有一口气，我就要站在讲台上”体现的是？
+A: 对教育事业的热爱和奉献
+B: 对权力的渴望
+C: 被迫工作，无可奈何
+D: 盲目坚持，不考虑身体
+ANS: ${aesEncrypt('A')}
+Q: 卓嘎、央宗姐妹的事迹体现的是？
+A: 守好祖国领土，爱国奉献
+B: 逃避责任，贪图享乐
+C: 追求个人利益，忽视国家
+D: 盲目跟风，没有主见
+ANS: ${aesEncrypt('A')}
+Q: 人生目标的确立需要？
+A: 盲目跟风，不考虑实际
+B: 了解自己，结合社会需要
+C: 只关注个人兴趣，忽视现实
+D: 听从他人安排，没有主见
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种做法不利于实现人生价值？
+A: 兢兢业业，做好本职工作
+B: 好高骛远，眼高手低
+C: 脚踏实地，努力奋斗
+D: 不断学习，提升能力
+ANS: ${aesEncrypt('B')}
+Q: 人生态度影响人生发展，下列说法正确的是？
+A: 积极的人生态度让人热爱生活，勇于拼搏
+B: 消极的人生态度让人充满动力
+C: 积极的人生态度让人逃避挫折
+D: 消极的人生态度让人获得成功
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种职业体现了“平凡中的伟大”？
+A: 环卫工人，默默守护城市整洁
+B: 追求特权，损害他人利益的人
+C: 投机取巧，不劳而获的人
+D: 贪图享乐，逃避责任的人
+ANS: ${aesEncrypt('A')}
+Q: 实现人生价值的舞台是？
+A: 新时代的伟大实践
+B: 虚拟的网络世界
+C: 封闭的个人空间
+D: 他人的帮助
+ANS: ${aesEncrypt('A')}
+Q: 人生的“河流”比喻中，目标的作用是？
+A: 指引前进方向，让人不迷茫
+B: 阻碍前进，增加负担
+C: 让人犹豫不决
+D: 浪费时间，没有实际意义
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种行为是对人生的不负责任？
+A: 虚度年华，无所事事
+B: 努力学习，追求进步
+C: 积极进取，实现目标
+D: 不断奋斗，奉献社会
+ANS: ${aesEncrypt('A')}
+Q: 确立人生目标的正确顺序是？
+A: 了解自己→结合社会需要→设定目标
+B: 设定目标→了解自己→结合社会需要
+C: 结合社会需要→设定目标→了解自己
+D: 盲目设定→不考虑实际
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的实现不需要？
+A: 坚持不懈的努力
+B: 一蹴而就的幻想
+C: 克服困难的勇气
+D: 脚踏实地的行动
+ANS: ${aesEncrypt('B')}
+Q: 下列哪种思想有利于树立正确的人生目标？
+A: 为祖国和人民作贡献
+B: 只关注个人利益
+C: 追求物质享受
+D: 逃避责任，贪图安逸
+ANS: ${aesEncrypt('A')}
+Q: 劳动最光荣的原因是？
+A: 劳动创造美好生活，推动社会进步
+B: 劳动能赚钱，让人富有
+C: 劳动能获得荣誉，让人出名
+D: 劳动能获得权力，让人有地位
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法体现了“在奉献中成就人生”？
+A: 参加志愿服务，帮助他人
+B: 自私自利，索取回报
+C: 逃避责任，贪图享乐
+D: 损害他人，谋取私利
+ANS: ${aesEncrypt('A')}
+Q: 人生的意义在于？
+A: 不断创造和奉献，实现自我价值
+B: 享受和索取，贪图安逸
+C: 虚度和浪费，无所作为
+D: 攀比和嫉妒，心态失衡
+ANS: ${aesEncrypt('A')}
+Q: 树立正确的人生态度，需要做到的是？
+A: 拥有积极心态，正确对待顺境逆境
+B: 盲目乐观，忽视困难
+C: 消极悲观，害怕挫折
+D: 怨天尤人，推卸责任
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种人物的人生是有价值的？
+A: 为社会进步作出贡献的人
+B: 危害社会，谋取私利的人
+C: 贪图享乐，虚度年华的人
+D: 自私自利，损害他人的人
+ANS: ${aesEncrypt('A')}
+Q: 实现人生目标的关键是？
+A: 付诸行动，坚持不懈
+B: 空想冥想，等待机遇
+C: 依赖他人，不自己努力
+D: 半途而废，缺乏坚持
+ANS: ${aesEncrypt('A')}
+Q: 人生路上的“鲜花与荆棘”比喻的是？
+A: 顺境与逆境
+B: 财富与权力
+C: 名誉与地位
+D: 快乐与悲伤
+ANS: ${aesEncrypt('A')}
+Q: 下列哪种做法体现了“脚踏实地”？
+A: 一步一个脚印，逐步实现目标
+B: 好高骛远，不切实际
+C: 投机取巧，急于求成
+D: 半途而废，缺乏耐心
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的大小取决于？
+A: 对他人和社会贡献的大小
+B: 拥有财富的多少
+C: 权力的大小
+D: 地位的高低
+ANS: ${aesEncrypt('A')}`,
+      
+      // 难题（对应第3个TXT文件：题库3.txt + 补充拓展题）
+      hard: `Q: 钱学森强调中学教育对他的成长至关重要，主要因为中学阶段帮助他构建了？
+A: 单一的学科知识
+B: 基础科学体系与道德观念
+C: 纯粹的娱乐兴趣
+D: 仅有的人际交往圈
+ANS: ${aesEncrypt('B')}
+Q: “人生万事须自为，跬步江山即寥廓”对青少年的核心启示是？
+A: 依赖他人推动成长
+B: 主动追求进步，脚踏实地积累
+C: 等待机遇降临再行动
+D: 忽视细节，专注大目标
+ANS: ${aesEncrypt('B')}
+Q: 初中生活规划需结合“自身条件”，下列属于自身条件的是？
+A: 家庭社会地位
+B: 兴趣爱好与能力水平
+C: 他人的成功案例
+D: 偶然的运气
+ANS: ${aesEncrypt('B')}
+Q: 小蓉模仿他人言行却感到疲惫，根源在于她？
+A: 缺乏自我认知，盲目跟风
+B: 适应能力过强
+C: 过于关注他人优点
+D: 性格过于敏感
+ANS: ${aesEncrypt('A')}
+Q: 改正缺点时“从最容易的开始”，其核心目的是？
+A: 逃避困难任务
+B: 积累成就感，增强坚持动力
+C: 优先解决次要问题
+D: 节省时间成本
+ANS: ${aesEncrypt('B')}
+Q: 梦想与现实之间的关键桥梁是？
+A: 空想冥想
+B: 持续努力与行动
+C: 他人的帮助
+D: 偶然的机遇
+ANS: ${aesEncrypt('B')}
+Q: 毛泽东少年时期如饥似渴阅读《三国演义》《水浒传》，体现的品质是？
+A: 贪玩好动
+B: 热爱学习，主动积累知识
+C: 逃避田间劳动
+D: 只关注文学类书籍
+ANS: ${aesEncrypt('B')}
+Q: 学习的“理解”层次，核心是将知识转化为？
+A: 机械记忆的内容
+B: 自身的智慧与认知
+C: 未消化的信息
+D: 可炫耀的资本
+ANS: ${aesEncrypt('B')}
+Q: 下列做法中，最能体现“做更好的自己”的是？
+A: 因身材短板而自卑封闭
+B: 接纳自身差异，发挥音乐天赋
+C: 完全模仿班级优等生的言行
+D: 拒绝承认自己的数学短板
+ANS: ${aesEncrypt('B')}
+Q: 面对他人不客观的贬损评价，正确的应对方式是？
+A: 激烈争吵，维护自尊
+B: 理性思考后平静拒绝，不被影响
+C: 全盘接受，自我否定
+D: 默默承受，自我压抑
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段“自我意识增强”的典型表现是？
+A: 事事依赖父母决策
+B: 主动规划未来，关注他人评价
+C: 不愿与同学交流想法
+D: 完全忽视他人看法
+ANS: ${aesEncrypt('B')}
+Q: “凡事预则立，不预则废”应用于初中生活，具体做法是？
+A: 制定详细的学习与生活计划
+B: 随波逐流，无明确目标
+C: 只关注眼前任务，不考虑长远
+D: 频繁更改计划，缺乏连贯性
+ANS: ${aesEncrypt('A')}
+Q: 深入认识自己的有效途径是？
+A: 仅通过一次自画像活动
+B: 结合自我反思、他人评价与生活实践
+C: 拒绝参与集体活动
+D: 盲目自信，不听他人建议
+ANS: ${aesEncrypt('B')}
+Q: 少年梦想的价值在于既满足个人追求，又要？
+A: 与国家发展、中国梦相结合
+B: 只关注个人利益最大化
+C: 脱离现实条件
+D: 追求物质享受
+ANS: ${aesEncrypt('A')}
+Q: 学习的“运用”层次，核心是将理解的知识转化为？
+A: 记忆中的碎片信息
+B: 解决实际问题的能力
+C: 口头炫耀的资本
+D: 应付考试的工具
+ANS: ${aesEncrypt('B')}
+Q: 下列行为中，不利于梦想实现的是？
+A: 养成主动学习的习惯
+B: 积极参与社会实践积累经验
+C: 缺乏自律，拖延成性
+D: 掌握科学的学习方法
+ANS: ${aesEncrypt('C')}
+Q: 钱学森归国后优先探望中学母校，体现了他对中学教育的？
+A: 形式上的重视
+B: 真挚的感恩与认可
+C: 对大学教育的不满
+D: 单纯的怀旧情绪
+ANS: ${aesEncrypt('B')}
+Q: 正确对待顺境与逆境，对实现梦想的意义是？
+A: 顺境中骄傲自满，逆境中放弃
+B: 顺境中珍惜机遇，逆境中坚持奋进
+C: 顺境中懈怠享乐，逆境中抱怨命运
+D: 顺境中挥霍时光，逆境中逃避现实
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段规划个人目标，无需考虑的因素是？
+A: 社会发展的需要
+B: 自身的兴趣与能力
+C: 他人的攀比心理
+D: 老师与家长的合理建议
+ANS: ${aesEncrypt('C')}
+Q: “学习是半径，半径越大，世界越广阔”形象说明学习能？
+A: 扩大视野，提升认知与能力
+B: 增加学业负担，限制自由
+C: 占用娱乐时间，影响生活质量
+D: 让世界变得复杂难懂
+ANS: ${aesEncrypt('A')}
+Q: 做有梦想的少年，不需要具备的品质是？
+A: 坚定的理想信念
+B: 刻苦学习的态度
+C: 强健的体魄
+D: 好高骛远的心态
+ANS: ${aesEncrypt('D')}
+Q: 下列对梦想的认识，正确的是？
+A: 梦想未实现就毫无意义
+B: 梦想即使不能实现，也能引领人生方向
+C: 梦想与现实永远无法接轨
+D: 现实必然会打败梦想
+ANS: ${aesEncrypt('B')}
+Q: 初中阶段与小学阶段相比，自我发展的核心变化是？
+A: 被动接受知识灌输
+B: 主动发现自我、规划未来
+C: 完全依赖老师指导
+D: 只关注学业成绩
+ANS: ${aesEncrypt('B')}
+Q: 请信任的人协助改正缺点，主要是为了获得？
+A: 他人的代劳
+B: 监督与支持，避免半途而废
+C: 炫耀自己的决心
+D: 额外的奖励
+ANS: ${aesEncrypt('B')}
+Q: 青少年追求政治进步的“人生三部曲”是？
+A: 入队、入团、入党
+B: 入学、升学、就业
+C: 认识、熟悉、合作
+D: 兴趣、爱好、特长
+ANS: ${aesEncrypt('A')}
+Q: “珍视当下”在初中生活中的具体体现是？
+A: 沉迷过去的成绩，不思进取
+B: 把握眼前机遇，认真对待学习与成长
+C: 幻想未来的美好，不付诸行动
+D: 逃避现实困难，沉迷网络娱乐
+ANS: ${aesEncrypt('B')}
+Q: 自画像活动的核心目的是帮助学生？
+A: 向同学炫耀自己的优点
+B: 更客观地认识自己的特点
+C: 批评他人的不足
+D: 完成老师布置的任务
+ANS: ${aesEncrypt('B')}
+Q: 面对他人的评价，我们应重点关注？
+A: 恶意的贬损与虚假的吹捧
+B: 客观公正、有助于成长的评价
+C: 片面的情绪化表达
+D: 大多数人的跟风评价
+ANS: ${aesEncrypt('B')}
+Q: 实现梦想需要“善于学习”，下列做法不符合的是？
+A: 发现并保持学习兴趣
+B: 养成课前预习、课后复习的习惯
+C: 盲目刷题，忽视知识理解
+D: 积极参加社会实践，学以致用
+ANS: ${aesEncrypt('C')}
+Q: 初中阶段被称为“拔节孕穗期”，强调的是青少年需注重？
+A: 身体的快速发育
+B: 世界观、人生观、价值观的初步形成
+C: 追求物质生活的改善
+D: 逃避成长中的责任
+ANS: ${aesEncrypt('B')}
+Q: 下列体现“努力”科学方法的是？
+A: 盲目蛮干，缺乏计划
+B: 珍视团队合作，相互支持进步
+C: 单打独斗，拒绝他人帮助
+D: 三天打鱼，两天晒网
+ANS: ${aesEncrypt('B')}
+Q: 梦想与个人价值的关系是？
+A: 梦想引领个人价值的实现
+B: 梦想与个人价值毫无关联
+C: 个人价值的实现无需梦想支撑
+D: 梦想会阻碍个人价值发挥
+ANS: ${aesEncrypt('A')}
+Q: 毛泽东少年时期的阅读经历，对他的影响是？
+A: 仅增加了文学素养
+B: 积累知识，开阔视野，塑造思维
+C: 影响了正常的田间劳动
+D: 让他沉迷小说，忽视学业
+ANS: ${aesEncrypt('B')}
+Q: 下列做法不利于构建和谐师生关系的是？
+A: 尊重老师的劳动，主动问好
+B: 隐瞒自己的想法，害怕批评
+C: 遇到问题主动请教
+D: 理解老师的教学安排
+ANS: ${aesEncrypt('B')}
+Q: 学习的“记忆、理解、运用”三个层次的正确关系是？
+A: 相互独立，互不关联
+B: 记忆是基础，理解是关键，运用是目的
+C: 只需记忆，无需理解与运用
+D: 只需运用，无需记忆与理解
+ANS: ${aesEncrypt('B')}
+Q: 成为“有理想、敢担当、能吃苦、肯奋斗”的中学生，核心是？
+A: 只关注个人利益得失
+B: 在担当中历练，在尽责中成长
+C: 逃避困难，贪图安逸
+D: 依赖他人安排，缺乏独立思考
+ANS: ${aesEncrypt('B')}
+Q: 下列说法错误的是？
+A: 中学教育为钱学森的成长奠定了坚实基础
+B: 认识自己是一个长期逐步深入的过程
+C: 梦想的实现无需付出实际努力
+D: 学习是成就梦想的重要路径
+ANS: ${aesEncrypt('C')}
+Q: 规划初中生活时“结合社会需要”，其意义是？
+A: 让个人目标更具现实价值
+B: 违背个人兴趣，增加负担
+C: 让目标变得遥不可及
+D: 限制个人发展的可能性
+ANS: ${aesEncrypt('A')}
+Q: 面对他人的批评，正确的态度是？
+A: 虚心接受，反思改进
+B: 抵触反感，拒不接受
+C: 怀恨在心，伺机反驳
+D: 无所谓，不放在心上
+ANS: ${aesEncrypt('A')}
+Q: 下列做法最能体现“做更好的自己”的是？
+A: 因身材不够高大而自卑
+B: 发挥绘画天赋，主动参加比赛
+C: 看到同学擅长跑步就盲目训练
+D: 拒绝承认自己的数学短板
+ANS: ${aesEncrypt('B')}
+Q: 个人梦想与中国梦的正确关系是？
+A: 个人梦想融入中国梦，更具价值
+B: 个人梦想与中国梦相互割裂
+C: 中国梦依赖个人梦想，个人梦想无需考虑国家
+D: 个人梦想优先于中国梦
+ANS: ${aesEncrypt('A')}
+Q: 初中阶段的学习任务，核心不仅是掌握知识，还包括？
+A: 提升思想品德与精神境界
+B: 只追求考试高分
+C: 逃避社会实践
+D: 忽视人际交往
+ANS: ${aesEncrypt('A')}
+Q: “主动学习”的典型表现是？
+A: 上课走神，作业抄袭
+B: 主动预习，不懂就问
+C: 被动接受老师讲解，不思考
+D: 拒绝参加课外学习活动
+ANS: ${aesEncrypt('B')}
+Q: 做有梦想的少年，应将个人梦想与什么紧密结合？
+A: 个人的物质欲望
+B: 国家和人民的需要
+C: 游戏等级的提升
+D: 明星的生活方式
+ANS: ${aesEncrypt('B')}
+Q: 认识自己的过程中，应避免的是？
+A: 定期自我反思
+B: 客观评价自身优缺点
+C: 盲目自大，忽视不足
+D: 倾听他人的合理建议
+ANS: ${aesEncrypt('C')}
+Q: 下列做法不利于落实初中生活规划的是？
+A: 制定具体计划，逐步执行
+B: 缺乏自律，拖延成性
+C: 根据实际情况调整方向
+D: 坚持目标，不轻易放弃
+ANS: ${aesEncrypt('B')}
+Q: “努力成就梦想”体现的哲学道理是？
+A: 量变积累到一定程度引发质变
+B: 梦想可以凭空实现
+C: 努力一定能立刻获得回报
+D: 梦想与努力无关
+ANS: ${aesEncrypt('A')}
+Q: 钱学森的中学老师对他的深远影响，体现了教师职业的？
+A: 教书育人，塑造灵魂的价值
+B: 仅传授知识的功能
+C: 获得物质回报的途径
+D: 享受特权的优势
+ANS: ${aesEncrypt('A')}
+Q: 青少年实现梦想过程中，对待挫折的正确态度是？
+A: 迎难而上，积极克服
+B: 消极退缩，放弃努力
+C: 怨天尤人，自暴自弃
+D: 逃避现实，一蹶不振
+ANS: ${aesEncrypt('A')}
+Q: “天下之本在家”强调家庭对社会的作用是？
+A: 家庭是社会的基本细胞，影响社会和谐
+B: 家庭与社会发展无关
+C: 家庭利益高于社会利益
+D: 社会发展无需依赖家庭
+ANS: ${aesEncrypt('A')}
+Q: 孔繁森两次进藏工作，勤政为民，体现的核心品质是？
+A: 自私自利
+B: 爱岗敬业，无私奉献
+C: 追求名利
+D: 逃避内地工作压力
+ANS: ${aesEncrypt('B')}
+Q: 家庭文明建设的重要意义不包括？
+A: 促进社会文明进步
+B: 成为国家发展的基点
+C: 引发家庭矛盾冲突
+D: 支撑民族进步
+ANS: ${aesEncrypt('C')}
+Q: 孔子“有教无类”的教育思想，对师生关系的启示是？
+A: 教师应平等对待所有学生
+B: 教师应偏爱成绩优异的学生
+C: 教师应歧视成绩落后的学生
+D: 学生应绝对服从教师
+ANS: ${aesEncrypt('A')}
+Q: 陶行知“生活即教育”的核心主张是？
+A: 教育脱离生活实际
+B: 教育应贴近生活，培养生活力与创造力
+C: 生活与教育相互独立
+D: 只关注书本知识的传授
+ANS: ${aesEncrypt('B')}
+Q: 教育家精神中“乐教爱生、甘于奉献”，要求教师？
+A: 优先关注个人利益
+B: 热爱教育事业，关爱学生成长
+C: 敷衍教学，追求名利
+D: 严格要求学生，忽视关爱
+ANS: ${aesEncrypt('B')}
+Q: 和谐师生关系的基础是相互尊重，下列做法体现这一点的是？
+A: 学生当面顶撞老师的批评
+B: 老师忽视学生的合理建议
+C: 师生平等沟通，相互理解
+D: 学生隐瞒自己的真实想法
+ANS: ${aesEncrypt('C')}
+Q: 面对不同教学风格的老师，学生的正确做法是？
+A: 挑剔指责，拒绝适应
+B: 尊重差异，善于学习不同老师的优点
+C: 区别对待，只喜欢幽默的老师
+D: 背后抱怨，消极应付
+ANS: ${aesEncrypt('B')}
+Q: 王亚南尊重口头表达能力较差的老师，体现的品质是？
+A: 虚伪逢迎
+B: 尊重他人，善于发现他人长处
+C: 盲目崇拜
+D: 投机取巧，讨好老师
+ANS: ${aesEncrypt('B')}
+Q: 友谊的“心灵相遇”，核心是指？
+A: 基于物质条件的交往
+B: 志同道合，精神契合
+C: 相互利用的利益关系
+D: 表面和谐的虚假关系
+ANS: ${aesEncrypt('B')}
+Q: 《论语》中“益者三友”不包括？
+A: 友直（正直的人）
+B: 友谅（诚信的人）
+C: 友多闻（见闻广博的人）
+D: 友便佞（夸夸其谈的人）
+ANS: ${aesEncrypt('D')}
+Q: 马克思与恩格斯的友谊之所以伟大，关键在于？
+A: 相互支持，为共同事业奋斗
+B: 相互利用，追求个人利益
+C: 表面和谐，内心疏离
+D: 一方依赖另一方，地位不平等
+ANS: ${aesEncrypt('A')}
+Q: 建立真挚友谊的方法不包括？
+A: 敞开心扉，主动表达真诚
+B: 用心培育，热情对待他人
+C: 封闭自我，等待友谊降临
+D: 慎重选择，与品德高尚的人交友
+ANS: ${aesEncrypt('C')}
+Q: 集体的联结度与下列哪个因素密切相关？
+A: 成员间的相互关联程度
+B: 成员的家庭背景差异
+C: 成员的年龄大小
+D: 成员的身高体重
+ANS: ${aesEncrypt('A')}
+Q: 集体生活对个人成长的积极影响不包括？
+A: 提高生活自理能力
+B: 提升人际交往能力
+C: 培养自私自利的性格
+D: 开阔视野，活跃思维
+ANS: ${aesEncrypt('C')}
+Q: 美好集体的愿景不包括？
+A: 共同的梦想与目标
+B: 一致的价值观
+C: 各自为政，缺乏团结
+D: 共同的使命追求
+ANS: ${aesEncrypt('C')}
+Q: 建设美好集体时，确定共同愿景的核心作用是？
+A: 限制成员的个性发展
+B: 引领成员团结一致，开拓进取
+C: 增加成员的负担
+D: 让集体缺乏活力
+ANS: ${aesEncrypt('B')}
+Q: 集体主义原则的核心是？
+A: 国家利益、集体利益、个人利益根本一致
+B: 个人利益高于一切
+C: 集体利益无视个人正当利益
+D: 国家利益服从个人利益
+ANS: ${aesEncrypt('A')}
+Q: 个人意愿与集体要求发生矛盾时，正确的化解方式是？
+A: 坚持个人意愿，脱离集体
+B: 寻找平衡点，协商化解
+C: 消极抵抗，敷衍了事
+D: 抱怨集体，指责他人
+ANS: ${aesEncrypt('B')}
+Q: 集体生活中的合作策略不包括？
+A: 坦诚交流，彼此信任
+B: 明确分工，主动担责
+C: 推卸责任，坐享其成
+D: 相互支持，及时帮助
+ANS: ${aesEncrypt('C')}
+Q: “人者固非可孤立生存于世界也，必有群然后人格始能立”强调的是？
+A: 集体生活对个人人格形成的重要性
+B: 个人独立于集体的可能性
+C: 逃避集体的必要性
+D: 孤立生存的合理性
+ANS: ${aesEncrypt('A')}
+Q: 班级信箱的设立，主要目的是？
+A: 传递八卦消息
+B: 促进师生沟通，了解学生心声
+C: 抱怨老师和同学
+D: 形式主义，无实际意义
+ANS: ${aesEncrypt('B')}
+Q: 班级文化建设的核心意义是？
+A: 增强班级凝聚力，营造良好氛围
+B: 搞形式主义，浪费时间
+C: 引发班级矛盾
+D: 让班级显得与众不同
+ANS: ${aesEncrypt('A')}
+Q: 集体事务细分给每位成员，是为了？
+A: 增加个人负担
+B: 让成员参与集体建设，增强归属感
+C: 推卸管理责任
+D: 制造成员间的矛盾
+ANS: ${aesEncrypt('B')}
+Q: 师生关系“教学相长”的含义是？
+A: 老师只传授知识，学生被动接受
+B: 师生相互学习，共同进步
+C: 老师权威至上，学生绝对服从
+D: 学生质疑老师，不尊重师长
+ANS: ${aesEncrypt('B')}
+Q: 教师的核心职责不包括？
+A: 传播知识、思想与真理
+B: 塑造学生的灵魂与生命
+C: 谋取个人私利与特权
+D: 教书育人，传承文明
+ANS: ${aesEncrypt('C')}
+Q: 与老师交往的正确做法是？
+A: 主动沟通，尊重老师的劳动
+B: 隐瞒想法，害怕批评
+C: 当面一套，背后一套
+D: 盲目依赖，缺乏独立思考
+ANS: ${aesEncrypt('A')}
+Q: 友谊能够超越物质条件、家庭背景，体现了友谊的？
+A: 功利性
+B: 纯粹性
+C: 复杂性
+D: 虚伪性
+ANS: ${aesEncrypt('B')}
+Q: 下列行为不利于集体团结的是？
+A: 相互关爱，彼此支持
+B: 相互排斥，各自为政
+C: 相互帮助，共同进步
+D: 相互理解，彼此包容
+ANS: ${aesEncrypt('B')}
+Q: 美好集体的特征不包括？
+A: 民主公正
+B: 充满活力
+C: 冷漠自私
+D: 善于合作
+ANS: ${aesEncrypt('C')}
+Q: 集体生活中，正确的竞争态度是？
+A: 相互促进，共同提高
+B: 相互打压，嫉妒他人
+C: 隐瞒优势，害怕他人超越
+D: 不择手段，争夺第一
+ANS: ${aesEncrypt('A')}
+Q: 表达对家人的爱，恰当的方式是？
+A: 大声说出“我爱你”
+B: 冷战不沟通
+C: 指责家人的不足
+D: 忽视家人的关爱
+ANS: ${aesEncrypt('A')}
+Q: 与朋友发生矛盾时，合理的解决方式是？
+A: 协商宽容，换位思考
+B: 断绝来往，伺机报复
+C: 到处抱怨，说朋友坏话
+D: 坚持己见，绝不妥协
+ANS: ${aesEncrypt('A')}
+Q: 集体成员主动承担责任的原因是？
+A: 责任是他人强加的负担
+B: 承担责任能促进集体发展，实现个人价值
+C: 推卸责任能获得更多利益
+D: 承担责任会吃亏
+ANS: ${aesEncrypt('B')}
+Q: 家庭和睦对社会的影响是？
+A: 家庭和睦则社会安定
+B: 家庭和睦与社会无关
+C: 家庭和睦会阻碍社会发展
+D: 社会安定与家庭无关
+ANS: ${aesEncrypt('A')}
+Q: 孔子“因材施教”的教育思想，要求教师？
+A: 对所有学生采用相同教学方法
+B: 根据学生差异采用不同教学方法
+C: 只关注成绩好的学生
+D: 忽视学生的个性差异
+ANS: ${aesEncrypt('B')}
+Q: 陶行知“千教万教，教人求真；千学万学，学做真人”强调的是？
+A: 教育的核心是培养真诚正直的人
+B: 教育的核心是追求高分
+C: 学习的核心是投机取巧
+D: 学习的核心是表面功夫
+ANS: ${aesEncrypt('A')}
+Q: 呵护友谊需要坦诚交流，下列做法体现这一点的是？
+A: 隐瞒自己的真实想法
+B: 真诚表达观点，倾听朋友意见
+C: 敷衍朋友，不认真沟通
+D: 背后议论朋友的不足
+ANS: ${aesEncrypt('B')}
+Q: 个人与集体的正确关系是？
+A: 个人利益高于集体利益
+B: 集体利益无视个人正当利益
+C: 个人与集体相互依存，相互促进
+D: 个人与集体相互对立
+ANS: ${aesEncrypt('C')}
+Q: 下列行为体现对教师尊重的是？
+A: 上课认真听讲，主动问好
+B: 上课走神，随意打断老师讲课
+C: 不完成老师布置的任务
+D: 背后议论老师的缺点
+ANS: ${aesEncrypt('A')}
+Q: 家庭被称为“梦想启航的地方”，说明家庭是？
+A: 个人成长的重要环境
+B: 限制个人梦想的场所
+C: 个人梦想的唯一来源
+D: 与梦想无关的空间
+ANS: ${aesEncrypt('A')}
+Q: 马克思与恩格斯的友谊，核心是基于？
+A: 共同的事业与追求
+B: 相互利用的利益
+C: 显赫的地位
+D: 无矛盾的相处
+ANS: ${aesEncrypt('A')}
+Q: 人的生命由“肉体”和“精神”构成，下列体现精神层面生命价值的是？
+A: 身体健康，无疾病
+B: 为社会作贡献，实现人生意义
+C: 拥有丰富的物质财富
+D: 外貌出众，受人喜爱
+ANS: ${aesEncrypt('B')}
+Q: “天地之间人为贵”的核心内涵是？
+A: 人的生命比其他事物更宝贵
+B: 人的地位高于一切
+C: 人可以随意支配自然
+D: 人无需敬畏生命
+ANS: ${aesEncrypt('A')}
+Q: 敬畏生命“推己及人”的具体要求是？
+A: 只珍惜自己的生命
+B: 从珍惜自己的生命延伸到关爱他人
+C: 自私自利，不顾他人安危
+D: 对他人的生命漠不关心
+ANS: ${aesEncrypt('B')}
+Q: 2008年汶川地震后的紧急救援，体现了？
+A: 生命至上，竭尽全力保护生命
+B: 生命无关紧要，重视物质救援
+C: 救援是形式主义
+D: 只关注救援人员的安全
+ANS: ${aesEncrypt('A')}
+Q: 全国防灾减灾日定为5月12日，主要目的是？
+A: 纪念汶川地震遇难者，增强防灾意识
+B: 一个普通的纪念日
+C: 提醒人们忘记灾难
+D: 增加社会负担
+ANS: ${aesEncrypt('A')}
+Q: 保障生命安全的基础是？
+A: 增强安全意识，遵守安全规则
+B: 心存侥幸，忽视安全提示
+C: 冒险行为，追求刺激
+D: 依赖他人保护，缺乏自我防范
+ANS: ${aesEncrypt('A')}
+Q: 下列做法不利于公共卫生安全的是？
+A: 勤洗手，勤通风
+B: 随地吐痰，乱扔垃圾
+C: 做好免疫接种
+D: 使用公筷，实行分餐制
+ANS: ${aesEncrypt('B')}
+Q: 面对自然灾害，提高防护能力的关键是？
+A: 掌握科学的自救互救方法
+B: 惊慌失措，盲目逃生
+C: 等待他人救援，不主动行动
+D: 放弃希望，消极应对
+ANS: ${aesEncrypt('A')}
+Q: 心肺复苏的最佳抢救时间是4分钟内，这说明？
+A: 生命宝贵，抢救需争分夺秒
+B: 4分钟后抢救一定无效
+C: 无需学习心肺复苏技能
+D: 生命可以随意对待
+ANS: ${aesEncrypt('A')}
+Q: 爱护身体的不当做法是？
+A: 适量运动，合理饮食
+B: 规律作息，不熬夜
+C: 滥用药物，忽视体检
+D: 注意卫生，预防疾病
+ANS: ${aesEncrypt('C')}
+Q: 滋养心灵的不当方式是？
+A: 阅读好书，汲取精神养料
+B: 参与有意义的公益活动
+C: 沉迷网络游戏，逃避现实
+D: 与他人沟通，获得心理支持
+ANS: ${aesEncrypt('C')}
+Q: 遇到心理困扰时，正确的应对方式是？
+A: 独自承受，不寻求帮助
+B: 向父母、老师或心理咨询师求助
+C: 暴饮暴食，发泄情绪
+D: 逃避现实，沉迷幻想
+ANS: ${aesEncrypt('B')}
+Q: “敬畏生命，行有所止”的含义是？
+A: 尊重生命，谨慎处理生命相关问题
+B: 害怕生命，不敢有所作为
+C: 忽视生命，肆意妄为
+D: 只珍惜自己的生命
+ANS: ${aesEncrypt('A')}
+Q: 生命的意义核心在于？
+A: 为他人和社会作贡献
+B: 追求个人物质享受
+C: 虚度年华，无所事事
+D: 危害社会，谋取私利
+ANS: ${aesEncrypt('A')}
+Q: 下列属于珍爱生命表现的是？
+A: 遵守交通规则，不闯红灯
+B: 酒后驾车，漠视安全
+C: 私自野外游泳，冒险逞强
+D: 打架斗殴，伤害自己和他人
+ANS: ${aesEncrypt('A')}
+Q: 敬畏生命的表现不包括？
+A: 善待身边的每一个人
+B: 尊重自然生命，爱护动植物
+C: 关怀弱势群体
+D: 伤害他人，满足私欲
+ANS: ${aesEncrypt('D')}
+Q: 增强安全意识的具体做法是？
+A: 进入公共场所后查找安全疏散通道
+B: 忽视安全提示，心存侥幸
+C: 不学习安全知识，盲目自信
+D: 冒险操作，忽视危险
+ANS: ${aesEncrypt('A')}
+Q: 下列不属于急救常识的是？
+A: 心肺复苏
+B: 止血包扎
+C: 火灾逃生
+D: 如何制造危险场景
+ANS: ${aesEncrypt('D')}
+Q: 爱护身体需要关注的健康信息不包括？
+A: 自己的药物过敏情况
+B: 家庭成员的健康状况
+C: 最新的娱乐八卦
+D: 自己的身体发育情况
+ANS: ${aesEncrypt('C')}
+Q: 健康的心理状态不包括？
+A: 积极乐观，情绪稳定
+B: 消极悲观，情绪低落
+C: 善于沟通，人际关系和谐
+D: 自我接纳，心态平衡
+ANS: ${aesEncrypt('B')}
+Q: “人最宝贵的是生命，生命属于我们只有一次”的启示是？
+A: 生命短暂，要珍惜并实现其价值
+B: 生命可以重来，不必珍惜
+C: 生命不重要，追求物质才关键
+D: 生命是负担，可以随意放弃
+ANS: ${aesEncrypt('A')}
+Q: 下列情况需要拨打急救电话的是？
+A: 轻微擦伤
+B: 突发心脏病，呼吸骤停
+C: 不小心摔倒，无明显不适
+D: 口渴想喝水
+ANS: ${aesEncrypt('B')}
+Q: 生命价值的衡量尺度是？
+A: 对他人和社会的贡献大小
+B: 拥有财富的多少
+C: 权力地位的高低
+D: 外貌颜值的高低
+ANS: ${aesEncrypt('A')}
+Q: 面对挫折，正确的生命态度是？
+A: 勇敢面对，积极克服
+B: 消极自杀，逃避现实
+C: 抱怨命运，自暴自弃
+D: 一蹶不振，放弃努力
+ANS: ${aesEncrypt('A')}
+Q: 下列行为不利于心理健康的是？
+A: 与人沟通，释放压力
+B: 压抑情绪，不表达感受
+C: 积极参加集体活动
+D: 帮助他人，获得成就感
+ANS: ${aesEncrypt('B')}
+Q: 敬畏生命“人民至上、生命至上”的内涵是？
+A: 生命比金钱、权势更重要
+B: 金钱、权势比生命更重要
+C: 可以为金钱牺牲生命
+D: 可以为权势忽视生命
+ANS: ${aesEncrypt('A')}
+Q: 规律作息的核心好处是？
+A: 精力充沛，维护身体健康
+B: 精神萎靡，影响学习
+C: 免疫力下降，容易生病
+D: 情绪波动，难以控制
+ANS: ${aesEncrypt('A')}
+Q: 有利于身体健康的食物是？
+A: 蔬菜水果，富含维生素
+B: 高油高糖的垃圾食品
+C: 过期变质的食品
+D: 辛辣刺激的食品
+ANS: ${aesEncrypt('A')}
+Q: 体育锻炼前科学热身的目的是？
+A: 预防运动损伤，激活身体
+B: 增加运动难度
+C: 浪费时间，影响运动效果
+D: 让身体感到疲惫
+ANS: ${aesEncrypt('A')}
+Q: 生命的力量主要体现在？
+A: 面对困难的退缩
+B: 战胜挫折的勇气和毅力
+C: 遇到问题的逃避
+D: 碰到挑战的畏惧
+ANS: ${aesEncrypt('B')}
+Q: 对生命不负责任的做法是？
+A: 酒后驾车，危害自己和他人
+B: 佩戴安全带，遵守交通规则
+C: 定期体检，关注健康
+D: 学习急救知识，保护自己和他人
+ANS: ${aesEncrypt('A')}
+Q: 心理健康的维护方法不包括？
+A: 积极寻求帮助，自我调节
+B: 封闭自我，拒绝交流
+C: 培养兴趣爱好，转移注意力
+D: 保持乐观心态，正视挫折
+ANS: ${aesEncrypt('B')}
+Q: 公共场合的安全注意事项不包括？
+A: 查找疏散通道，熟悉环境
+B: 忽视安全标志，随意走动
+C: 遵守安全规则，不拥挤打闹
+D: 不携带危险物品
+ANS: ${aesEncrypt('B')}
+Q: 体现对生命敬畏的行为是？
+A: 参与环保志愿活动，保护自然
+B: 破坏自然环境，伤害野生动物
+C: 浪费资源，不顾后代
+D: 污染环境，危害健康
+ANS: ${aesEncrypt('A')}
+Q: 生命教育的核心目标是？
+A: 让学生害怕生命，不敢行动
+B: 让学生珍爱生命、敬畏生命，实现价值
+C: 让学生忽视生命，肆意妄为
+D: 让学生只关注自己的生命
+ANS: ${aesEncrypt('B')}
+Q: 突发灾害时的正确逃生方法是？
+A: 弯腰捂鼻，沿疏散通道有序撤离
+B: 乘坐电梯，快速逃生
+C: 惊慌失措，盲目奔跑
+D: 贪恋财物，延误逃生
+ANS: ${aesEncrypt('A')}
+Q: 身心健康的核心是？
+A: 身体和心理都健康，相互促进
+B: 只关注身体健康，忽视心理
+C: 只关注心理健康，忽视身体
+D: 身体和心理都忽视
+ANS: ${aesEncrypt('A')}
+Q: “仁者爱人”体现的敬畏生命理念是？
+A: 关爱他人，帮助有需要的人
+B: 冷漠自私，不顾他人安危
+C: 歧视弱势群体
+D: 伤害他人，满足自己
+ANS: ${aesEncrypt('A')}
+Q: 马克思认为“最蹩脚的建筑师比最灵巧的蜜蜂高明”，原因是？
+A: 建筑师体型更大
+B: 建筑师先构思后建造，有明确目标
+C: 蜜蜂的劳动更辛苦
+D: 建筑师的劳动更轻松
+ANS: ${aesEncrypt('B')}
+Q: 钱伟长弃文从理的根本原因是？
+A: 文科成绩差，理科容易学
+B: 家人强迫，不得不从
+C: 国家危难，立志科学救国
+D: 追求个人名利
+ANS: ${aesEncrypt('C')}
+Q: 马克思中学毕业作文《青年在选择职业时的考虑》体现的追求是？
+A: 为人类幸福而工作
+B: 追求个人利益最大化
+C: 享受安逸生活
+D: 获得权力地位
+ANS: ${aesEncrypt('A')}
+Q: 积极的人生态度对人生发展的影响是？
+A: 看到事物积极面，热爱生活
+B: 只看到困难，消极悲观
+C: 遇到挫折就放弃
+D: 顺境中骄傲，逆境中抱怨
+ANS: ${aesEncrypt('A')}
+Q: 苏轼《定风波》“一蓑烟雨任平生”体现的人生态度是？
+A: 豁达乐观，不畏挫折
+B: 消极逃避，怨天尤人
+C: 随波逐流，没有主见
+D: 贪图享乐，害怕困难
+ANS: ${aesEncrypt('A')}
+Q: 司马迁列举的“文王拘而演《周易》”等事例，说明逆境能？
+A: 摧毁人的意志
+B: 激发潜能，成就事业
+C: 让人一蹶不振
+D: 让人抱怨命运
+ANS: ${aesEncrypt('B')}
+Q: “不完满才是人生”的启示是？
+A: 接受人生不完美，积极面对
+B: 追求完美，否则人生无意义
+C: 抱怨人生不完美，消极对待
+D: 放弃努力，接受平庸
+ANS: ${aesEncrypt('A')}
+Q: 对待顺境的正确态度是？
+A: 珍惜机遇，再接再厉
+B: 骄傲自满，停滞不前
+C: 贪图享乐，不思进取
+D: 挥霍浪费，坐享其成
+ANS: ${aesEncrypt('A')}
+Q: 对待逆境的正确态度是？
+A: 迎难而上，勇于克服
+B: 消极退缩，放弃努力
+C: 怨天尤人，自暴自弃
+D: 逃避现实，一蹶不振
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的核心衡量尺度是？
+A: 对他人和社会的贡献
+B: 拥有财富的多少
+C: 获得荣誉的高低
+D: 权力的大小
+ANS: ${aesEncrypt('A')}
+Q: 劳动的意义不包括？
+A: 创造美好生活
+B: 塑造人的本质，提升能力
+C: 改变社会关系
+D: 浪费时间和精力
+ANS: ${aesEncrypt('D')}
+Q: 其美多吉被评为“最美奋斗者”，核心原因是？
+A: 坚守雪线邮路，爱岗敬业，守护邮件安全
+B: 贪图名利，追求曝光
+C: 逃避责任，敷衍工作
+D: 享受特权，高人一等
+ANS: ${aesEncrypt('A')}
+Q: 雷锋日记中“如果你是一滴水，你是否滋润了一寸土地”体现的是？
+A: 奉献精神，关爱他人
+B: 自私自利，个人主义
+C: 虚无主义，毫无追求
+D: 功利主义，追求回报
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的实现途径不包括？
+A: 立足岗位，辛勤劳动
+B: 奉献社会，帮助他人
+C: 自私自利，损害他人
+D: 不断学习，提升能力
+ANS: ${aesEncrypt('C')}
+Q: 职业没有高低贵贱之分，关键在于？
+A: 收入多少
+B: 为社会作贡献的大小
+C: 权力大小
+D: 地位高低
+ANS: ${aesEncrypt('B')}
+Q: “劳动是人的第一需要”的含义是？
+A: 劳动是被迫的，让人痛苦
+B: 劳动能实现人的价值，让人充实
+C: 劳动是多余的，让人疲惫
+D: 劳动是为了生存，别无选择
+ANS: ${aesEncrypt('B')}
+Q: 实现人生价值的前提是？
+A: 树立正确的人生目标
+B: 追求个人利益最大化
+C: 等待机遇降临
+D: 依赖他人帮助
+ANS: ${aesEncrypt('A')}
+Q: 体现劳动精神的行为是？
+A: 辛勤劳动、诚实劳动、创造性劳动
+B: 投机取巧、不劳而获
+C: 敷衍了事、消极怠工
+D: 逃避劳动、贪图享乐
+ANS: ${aesEncrypt('A')}
+Q: 钱七虎的人生价值体现在？
+A: 为国家和人民安全贡献毕生心血
+B: 追求个人名利，享受特权
+C: 逃避责任，贪图安逸
+D: 谋取私利，损害国家利益
+ANS: ${aesEncrypt('A')}
+Q: 张桂梅“只要还有一口气，我就要站在讲台上”体现的是？
+A: 对教育事业的热爱与奉献
+B: 对权力的渴望
+C: 被迫工作，无可奈何
+D: 盲目坚持，不考虑身体
+ANS: ${aesEncrypt('A')}
+Q: 卓嘎、央宗姐妹的事迹体现的核心是？
+A: 守好祖国领土，爱国奉献
+B: 逃避责任，贪图享乐
+C: 追求个人利益，忽视国家
+D: 盲目跟风，没有主见
+ANS: ${aesEncrypt('A')}
+Q: 确立人生目标的正确步骤是？
+A: 盲目跟风，不考虑实际
+B: 了解自己→结合社会需要→设定目标
+C: 只关注个人兴趣，忽视现实
+D: 听从他人安排，没有主见
+ANS: ${aesEncrypt('B')}
+Q: 不利于实现人生价值的做法是？
+A: 兢兢业业，做好本职工作
+B: 好高骛远，眼高手低
+C: 脚踏实地，努力奋斗
+D: 不断学习，提升能力
+ANS: ${aesEncrypt('B')}
+Q: 人生态度对人生发展的影响，下列说法正确的是？
+A: 积极的人生态度让人热爱生活，勇于拼搏
+B: 消极的人生态度让人充满动力
+C: 积极的人生态度让人逃避挫折
+D: 消极的人生态度让人获得成功
+ANS: ${aesEncrypt('A')}
+Q: 体现“平凡中的伟大”的职业是？
+A: 环卫工人，默默守护城市整洁
+B: 追求特权，损害他人利益的人
+C: 投机取巧，不劳而获的人
+D: 贪图享乐，逃避责任的人
+ANS: ${aesEncrypt('A')}
+Q: 实现人生价值的主要舞台是？
+A: 新时代的伟大实践
+B: 虚拟的网络世界
+C: 封闭的个人空间
+D: 他人的帮助
+ANS: ${aesEncrypt('A')}
+Q: 人生“河流”比喻中，目标的作用是？
+A: 指引前进方向，避免迷茫
+B: 阻碍前进，增加负担
+C: 让人犹豫不决
+D: 浪费时间，没有实际意义
+ANS: ${aesEncrypt('A')}
+Q: 对人生不负责任的行为是？
+A: 虚度年华，无所事事
+B: 努力学习，追求进步
+C: 积极进取，实现目标
+D: 不断奋斗，奉献社会
+ANS: ${aesEncrypt('A')}
+Q: 确立人生目标不需要考虑的是？
+A: 自身优势与不足
+B: 社会发展的需要
+C: 他人的攀比对象
+D: 长远的发展前景
+ANS: ${aesEncrypt('C')}
+Q: 人生价值的实现不需要？
+A: 坚持不懈的努力
+B: 一蹴而就的幻想
+C: 克服困难的勇气
+D: 脚踏实地的行动
+ANS: ${aesEncrypt('B')}
+Q: 有利于树立正确人生目标的思想是？
+A: 为祖国和人民作贡献
+B: 只关注个人利益
+C: 追求物质享受
+D: 逃避责任，贪图安逸
+ANS: ${aesEncrypt('A')}
+Q: 劳动最光荣的核心原因是？
+A: 劳动创造美好生活，推动社会进步
+B: 劳动能赚钱，让人富有
+C: 劳动能获得荣誉，让人出名
+D: 劳动能获得权力，让人有地位
+ANS: ${aesEncrypt('A')}
+Q: 体现“在奉献中成就人生”的行为是？
+A: 参加志愿服务，帮助他人
+B: 自私自利，索取回报
+C: 逃避责任，贪图享乐
+D: 损害他人，谋取私利
+ANS: ${aesEncrypt('A')}
+Q: 人生的核心意义在于？
+A: 不断创造和奉献，实现自我价值
+B: 享受和索取，贪图安逸
+C: 虚度和浪费，无所作为
+D: 攀比和嫉妒，心态失衡
+ANS: ${aesEncrypt('A')}
+Q: 树立正确人生态度的关键是？
+A: 拥有积极心态，正确对待顺境逆境
+B: 盲目乐观，忽视困难
+C: 消极悲观，害怕挫折
+D: 怨天尤人，推卸责任
+ANS: ${aesEncrypt('A')}
+Q: 人生有价值的核心标志是？
+A: 为社会进步作出贡献
+B: 危害社会，谋取私利
+C: 贪图享乐，虚度年华
+D: 自私自利，损害他人
+ANS: ${aesEncrypt('A')}
+Q: 实现人生目标的关键是？
+A: 付诸行动，坚持不懈
+B: 空想冥想，等待机遇
+C: 依赖他人，不自己努力
+D: 半途而废，缺乏坚持
+ANS: ${aesEncrypt('A')}
+Q: 人生路上“鲜花与荆棘”比喻的是？
+A: 顺境与逆境
+B: 财富与权力
+C: 名誉与地位
+D: 快乐与悲伤
+ANS: ${aesEncrypt('A')}
+Q: 体现“脚踏实地”的做法是？
+A: 一步一个脚印，逐步实现目标
+B: 好高骛远，不切实际
+C: 投机取巧，急于求成
+D: 半途而废，缺乏耐心
+ANS: ${aesEncrypt('A')}
+Q: 人生价值的大小取决于？
+A: 对他人和社会贡献的大小
+B: 拥有财富的多少
+C: 权力的大小
+D: 地位的高低
+ANS: ${aesEncrypt('A')}`
+    };
+    
+    // 返回主页函数
+    function backToHome() {
+      // 停止所有定时器
+      if (timerInterval) clearInterval(timerInterval);
+      if (qTimer) clearInterval(qTimer);
+      
+      // 重置所有游戏状态
+      questions = [];
+      currentQ = null;
+      currentIndex = 0;
+      score = 0;
+      answers = [];
+      totalQuestionCount = 0;
+      categoryData = {};
+      totalTimer = 0;
+      questionTimer = 0;
+      timeDistribution = { flipTime: 0, browseTime: 0 };
+      
+      // 销毁图表实例（避免冲突）
+      if (chartInstance) chartInstance.destroy();
+      if (window.timeChartInstance) window.timeChartInstance.destroy();
+      
+      // 重置显示状态
+      document.getElementById('timerDisplay').textContent = '⏱️ 已用时：00:00';
+      document.getElementById('current-question').textContent = '1';
+      document.getElementById('total-questions').textContent = '0';
+      
+      // 隐藏结果区域、答题区域和模态框
+      document.getElementById('resultArea').style.display = 'none';
+      document.getElementById('quizArea').style.display = 'none';
+      document.getElementById('historyModal').style.display = 'none';
+      
+      // 显示初始界面
+      document.querySelector('.difficulty-area').style.display = 'block';
+      document.querySelector('.divider').style.display = 'block';
+      document.querySelector('.upload-area').style.display = 'block';
+      
+      // 恢复初始动画效果
+      setTimeout(() => {
+        document.querySelector('.difficulty-area').style.opacity = 1;
+        document.querySelector('.divider').style.opacity = 1;
+        document.querySelector('.upload-area').style.opacity = 1;
+      }, 100);
+    }
+    
+    // 难度选择函数（核心功能）
+    function selectDifficulty(difficulty) {
+      // 解析对应难度的题库
+      parseQuestions(presetQuestions[difficulty]);
+      const totalPoolCount = questions.length;
+      
+      // 逻辑判断：≤20题全答，>20题抽20题
+      if (totalPoolCount <= 20) {
+        totalQuestionCount = totalPoolCount;
+        alert(`已选择${difficulty === 'easy' ? '简单题' : difficulty === 'medium' ? '中等题' : '难题'}题库！\n题库共${totalQuestionCount}道题，将全部进行挑战~`);
+      } else {
+        totalQuestionCount = 20;
+        alert(`已选择${difficulty === 'easy' ? '简单题' : difficulty === 'medium' ? '中等题' : '难题'}题库！\n题库共${totalPoolCount}道题，随机抽取20题进行挑战~`);
+        shuffleArray(questions);
+        questions = questions.slice(0, 20); // 抽取前20题（已打乱）
+      }
+      
+      // 更新进度显示为实际作答题数
+      document.getElementById('total-questions').textContent = totalQuestionCount;
+      
+      // 启动全局计时
+      startTotalTimer();
+      
+      // 隐藏难度选择和上传区域，显示答题区域
+      document.querySelector('.difficulty-area').style.opacity = 0;
+      document.querySelector('.divider').style.opacity = 0;
+      document.querySelector('.upload-area').style.opacity = 0;
+      setTimeout(() => {
+        document.querySelector('.difficulty-area').style.display = 'none';
+        document.querySelector('.divider').style.display = 'none';
+        document.querySelector('.upload-area').style.display = 'none';
+        document.getElementById('quizArea').style.display = 'block';
+        loadNextQuestion();
+      }, 500);
+    }
+    
+    // 自定义题库上传功能
+    document.getElementById('quizFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        parseQuestions(content);
+        const totalPoolCount = questions.length;
+        
+        // 逻辑判断：≤20题全答，>20题抽20题
+        if (totalPoolCount <= 20) {
+          totalQuestionCount = totalPoolCount;
+          alert(`自定义题库加载成功！共${totalQuestionCount}道题，将全部进行挑战~`);
+        } else {
+          totalQuestionCount = 20;
+          alert(`自定义题库加载成功！共${totalPoolCount}道题，随机抽取20题进行挑战~`);
+          shuffleArray(questions);
+          questions = questions.slice(0, 20); // 抽取前20题（已打乱）
+        }
+        
+        document.getElementById('total-questions').textContent = totalQuestionCount;
+        
+        // 启动全局计时
+        startTotalTimer();
+        
+        document.querySelector('.difficulty-area').style.opacity = 0;
+        document.querySelector('.divider').style.opacity = 0;
+        document.querySelector('.upload-area').style.opacity = 0;
+        setTimeout(() => {
+          document.querySelector('.difficulty-area').style.display = 'none';
+          document.querySelector('.divider').style.display = 'none';
+          document.querySelector('.upload-area').style.display = 'none';
+          document.getElementById('quizArea').style.display = 'block';
+          loadNextQuestion();
+        }, 500);
+      };
+      reader.readAsText(file);
+    });
+    
+    // 解析题库（兼容预设和自定义题库，自动解密答案）
+    function parseQuestions(text) {
+      questions = []; // 重置题库
+      const lines = text.split('\n');
+      let q = {}, mode = '';
+      
+      for (let line of lines) {
+        line = line.trim();
+        // 跳过空行、注释行（#开头）和标题行
+        if (!line || line.startsWith('#') || line.includes('、') && line.endsWith('（') || line.endsWith('）')) continue;
+        
+        if (line.startsWith('Q:')) {
+          q.question = line.substring(2).trim();
+          mode = 'q';
+        } else if (line.startsWith('A:')) {
+          q.A = line.substring(2).trim();
+          mode = 'A';
+        } else if (line.startsWith('B:')) {
+          q.B = line.substring(2).trim();
+          mode = 'B';
+        } else if (line.startsWith('C:')) {
+          q.C = line.substring(2).trim();
+          mode = 'C';
+        } else if (line.startsWith('D:')) {
+          q.D = line.substring(2).trim();
+          mode = 'D';
+        } else if (line.startsWith('ANS:')) {
+          // 解析并解密答案
+          const encryptedAns = line.substring(4).trim();
+          q.answer = aesDecrypt(encryptedAns).toUpperCase(); // 解密后转为大写
+          q.category = getCategory(q.question);
+          questions.push(q);
+          q = {};
+        }
+      }
+    }
+    
+    // 分类匹配函数
+    function getCategory(q) {
+      if (/梦想|目标|人生|理想/.test(q)) return '梦想与目标';
+      if (/家|家庭|亲情|父母|亲人/.test(q)) return '家庭与亲情';
+      if (/老师|师生|同学|朋友|交往/.test(q)) return '人际交往';
+      if (/生命|安全|健康|急救|欺凌/.test(q)) return '生命教育';
+      if (/集体|班级|合作|团队|荣誉/.test(q)) return '集体成长';
+      if (/法律|宪法|权利|义务|违法|执法/.test(q)) return '法律常识';
+      return '综合素养';
+    }
+    
+    // 随机打乱数组
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+    
+    // 加载下一题
+    function loadNextQuestion() {
+      if (currentIndex >= questions.length) {
+        endGame();
+        return;
+      }
+      currentQ = questions[currentIndex];
+      document.getElementById('options').innerHTML = '';
+      document.getElementById('front').textContent = `第 ${currentIndex+1} 题`;
+      document.getElementById('back').textContent = currentQ.question;
+      document.getElementById('questionCard').classList.remove('flipped');
+      
+      // 翻牌后启动单题计时（翻牌思考时间）
+      setTimeout(() => {
+        document.getElementById('questionCard').classList.add('flipped');
+        qTimer = startQuestionTimer();
+      }, 300);
+      
+      document.getElementById('current-question').textContent = currentIndex + 1;
+      
+      const optionBtns = [];
+      for (let opt of ['A','B','C','D']) {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<strong>${opt}.</strong> ${currentQ[opt] || '无此选项'}`;
+        btn.dataset.opt = opt;
+        btn.onclick = () => selectAnswer(opt, optionBtns);
+        document.getElementById('options').appendChild(btn);
+        optionBtns.push(btn);
+      }
+    }
+    
+    // 选择答案
+    function selectAnswer(ans, optionBtns) {
+      // 停止单题翻牌计时并累计到总翻牌时间
+      stopQuestionTimer(qTimer);
+      timeDistribution.flipTime += questionTimer;
+      
+      const isCorrect = ans === currentQ.answer;
+      if (isCorrect) score++;
+      
+      const category = currentQ.category || '综合素养';
+      if (!categoryData[category]) {
+        categoryData[category] = { total: 0, correct: 0 };
+      }
+      categoryData[category].total++;
+      if (isCorrect) {
+        categoryData[category].correct++;
+      }
+      
+      optionBtns.forEach(btn => {
+        if (btn.dataset.opt === currentQ.answer) {
+          btn.classList.add('correct');
+        } else if (btn.dataset.opt === ans && !isCorrect) {
+          btn.classList.add('incorrect');
+        }
+        btn.disabled = true;
+      });
+      
+      // 记录答题信息（包含单题翻牌耗时）
+      answers.push({
+        question: currentQ.question,
+        options: {
+          A: currentQ.A || '无',
+          B: currentQ.B || '无',
+          C: currentQ.C || '无',
+          D: currentQ.D || '无'
+        },
+        userAns: ans,
+        correctAns: currentQ.answer,
+        category: category,
+        correctFlag: isCorrect,
+        questionNum: currentIndex + 1,
+        flipTimeSpent: questionTimer // 记录单题翻牌耗时
+      });
+      
+      setTimeout(() => {
+        currentIndex++;
+        loadNextQuestion();
+      }, 1500);
+    }
+    
+    // 结束游戏，显示结果
+    function endGame() {
+      // 停止全局计时
+      clearInterval(timerInterval);
+      // 计算浏览时间（总耗时 - 翻牌总时间，更精准）
+      timeDistribution.browseTime = Math.max(0, totalTimer - timeDistribution.flipTime);
+      
+      document.getElementById('quizArea').style.opacity = 0;
+      setTimeout(() => {
+        document.getElementById('quizArea').style.display = 'none';
+        document.getElementById('resultArea').style.display = 'block';
+        
+        const wrongQuestions = answers.filter(a => !a.correctFlag);
+        document.getElementById('wrongCount').textContent = 
+          `❌ 本次挑战共答错 ${wrongQuestions.length} 道题，点击按钮下载错题集`;
+        
+        // 格式化总耗时并显示
+        const formattedTotalTime = formatTime(totalTimer);
+        document.getElementById('totalTimeDisplay').textContent = `⏱️ 总耗时：${formattedTotalTime}`;
+        
+        // 渲染两个图表
+        setTimeout(() => {
+          renderCategoryChart();
+          setTimeout(() => renderTimePieChart(), 800);
+        }, 500);
+      }, 500);
+      
+      const total = questions.length; // 实际答题总数（≤20）
+      const correct = answers.filter(a => a.correctFlag).length;
+      const accuracy = ((correct / total) * 100).toFixed(1);
+      const categoryCount = {};
+      let weakest = '综合素养';
+      let maxWrongRate = 0;
+      
+      answers.forEach(a => {
+        if (!categoryCount[a.category]) categoryCount[a.category] = { total: 0, wrong: 0 };
+        categoryCount[a.category].total++;
+        if (!a.correctFlag) categoryCount[a.category].wrong++;
+      });
+      
+      for (let cat in categoryCount) {
+        const rate = categoryCount[cat].wrong / categoryCount[cat].total;
+        if (rate > maxWrongRate) {
+          maxWrongRate = rate;
+          weakest = cat;
+        }
+      }
+      
+      document.getElementById('summary').innerHTML = `
+        本次挑战：<br>
+        答题总数：${total} 道<br>
+        正确数量：${correct} 道<br>
+        准确率：${accuracy}%<br>
+        最需加强：【<span class="weakness">${weakest}</span>】类题目
+      `;
+      document.getElementById('weaknessTip').innerHTML = `
+        <p>💡 建议：多复习“${weakest}”相关内容，巩固知识短板！</p>
+      `;
+      
+      // 保存答题历史和错题集
+      saveQuizHistory();
+      saveWrongQuestionsToAccount(wrongQuestions);
+    }
+    
+    // 计时相关工具函数
+    function startTotalTimer() {
+      totalTimer = 0;
+      timerInterval = setInterval(() => {
+        totalTimer++;
+        // 实时更新计时显示
+        document.getElementById('timerDisplay').textContent = `⏱️ 已用时：${formatTime(totalTimer)}`;
+      }, 1000);
+    }
+    
+    function startQuestionTimer() {
+      questionTimer = 0;
+      return setInterval(() => {
+        questionTimer++;
+      }, 1000);
+    }
+    
+    function stopQuestionTimer(timer) {
+      clearInterval(timer);
+    }
+    
+    // 时间格式化：秒转分:秒（00:00格式）
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    // 渲染分类准确率柱状图（修复答题数显示错误）
+    function renderCategoryChart() {
+      try {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        let categories = Object.keys(categoryData);
+        let accuracies = [];
+        
+        if (categories.length === 0) {
+          categories = ['综合素养'];
+          accuracies = [0];
+        } else {
+          accuracies = categories.map(cat => {
+            const data = categoryData[cat];
+            return data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0;
+          });
+        }
+        
+        const barGradient = ctx.createLinearGradient(0, 0, 0, 350);
+        barGradient.addColorStop(0, 'rgba(0, 198, 251, 0.9)');
+        barGradient.addColorStop(1, 'rgba(0, 91, 234, 0.9)');
+        
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: categories,
+            datasets: [{
+              label: '准确率（%）',
+              data: accuracies,
+              backgroundColor: barGradient,
+              borderColor: 'rgba(0, 91, 234, 1)',
+              borderWidth: 2,
+              borderRadius: 8,
+              barThickness: 35,
+              maxBarThickness: 45,
+              minBarLength: 15
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 }, // 禁用动画确保Edge兼容
+            plugins: {
+              legend: {
+                display: true,
+                labels: { color: '#a0d8ff', font: { size: 14 }, padding: 15 }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 30, 60, 0.9)',
+                titleColor: '#fff',
+                bodyColor: '#a0d8ff',
+                callbacks: {
+                  afterBody: (items) => {
+                    const cat = categories[items[0].dataIndex];
+                    const data = categoryData[cat] || { correct: 0, total: 0 };
+                    return `答题数：${data.correct}/${data.total}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                grid: { color: 'rgba(255, 255, 255, 0.15)' },
+                ticks: { color: '#a0d8ff', callback: val => val + '%', stepSize: 20 }
+              },
+              x: {
+                grid: { display: false },
+                ticks: { color: '#a0d8ff', font: { size: 12 }, padding: 10 }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('分类图表渲染失败：', error);
+        document.querySelector('.chart-container').innerHTML = `
+          <div class="chart-title">各单元答题准确率</div>
+          <div style="color: #a0d8ff; padding: 50px 0;">图表加载失败，请刷新页面重试</div>
+        `;
+      }
+    }
+    
+    // 渲染时间分布圆形统计图（简化为翻牌时间、浏览时间）
+    function renderTimePieChart() {
+      try {
+        const ctx = document.getElementById('timePieChart').getContext('2d');
+        // 简化为两个统计维度
+        const labels = ['翻牌思考时间', '浏览时间'];
+        const data = [
+          timeDistribution.flipTime,
+          timeDistribution.browseTime
+        ];
+        // 适配Edge的颜色方案（对比更清晰）
+        const colors = [
+          'rgba(0, 198, 251, 0.8)',
+          'rgba(76, 175, 80, 0.8)'
+        ];
+        
+        // 销毁已有图表实例避免冲突
+        if (window.timeChartInstance) window.timeChartInstance.destroy();
+        
+        window.timeChartInstance = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              backgroundColor: colors,
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 2,
+              hoverOffset: 10
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 }, // 禁用动画确保Edge兼容
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { 
+                  color: '#a0d8ff', 
+                  font: { size: 14 }, 
+                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: 'circle'
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 30, 60, 0.9)',
+                titleColor: '#fff',
+                bodyColor: '#a0d8ff',
+                callbacks: {
+                  label: (context) => {
+                    const value = context.raw;
+                    const total = data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    return `${context.label}：${formatTime(value)}（${percentage}%）`;
+                  }
+                }
+              }
+            },
+            cutout: '60%' // 环形图样式，更易读
+          }
+        });
+      } catch (error) {
+        console.error('时间分布图表渲染失败：', error);
+        document.querySelectorAll('.chart-container')[1].innerHTML = `
+          <div class="chart-title">翻牌时间 vs 浏览时间分布</div>
+          <div style="color: #a0d8ff; padding: 50px 0;">图表加载失败，请刷新页面重试</div>
+        `;
+      }
+    }
+    
+    // 下载错题功能（保留并优化，新增翻牌耗时显示）
+    function downloadWrongQuestions() {
+      const wrongQuestions = answers.filter(a => !a.correctFlag);
+      if (wrongQuestions.length === 0) {
+        alert('🎉 恭喜！本次挑战无错题，无需下载~');
+        return;
+      }
+      
+      let txtContent = `# 法治星途 · 错题集\n`;
+      txtContent += `## 下载时间：${new Date().toLocaleString()}\n`;
+      txtContent += `## 总耗时：${formatTime(totalTimer)}\n`;
+      txtContent += `## 翻牌思考总时间：${formatTime(timeDistribution.flipTime)}\n`;
+      txtContent += `## 浏览总时间：${formatTime(timeDistribution.browseTime)}\n`;
+      txtContent += `## 答题总数：${questions.length} 道\n`;
+      txtContent += `## 错题总数：${wrongQuestions.length} 道\n\n`;
+      
+      wrongQuestions.forEach((wrong, index) => {
+        txtContent += `### 第 ${index + 1} 题（原题号：第${wrong.questionNum}题）\n`;
+        txtContent += `【所属分类】：${wrong.category}\n`;
+        txtContent += `【翻牌思考耗时】：${formatTime(wrong.flipTimeSpent)}\n`;
+        txtContent += `【题目】：${wrong.question}\n`;
+        txtContent += `【选项】：\n`;
+        txtContent += `  A. ${wrong.options.A}\n`;
+        txtContent += `  B. ${wrong.options.B}\n`;
+        txtContent += `  C. ${wrong.options.C}\n`;
+        txtContent += `  D. ${wrong.options.D}\n`;
+        txtContent += `【你的答案】：${wrong.userAns}（${wrong.options[wrong.userAns] || '无'})\n`;
+        txtContent += `【正确答案】：${wrong.correctAns}（${wrong.options[wrong.correctAns] || '无'})\n`;
+        txtContent += `\n=========================================\n\n`;
+      });
+      
+      const blob = new Blob([txtContent], { type: 'text/plain; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toLocaleDateString().replace(/\//g, '');
+      const time = new Date().toLocaleTimeString().replace(/:/g, '').slice(0, 6);
+      a.download = `法治星途错题集_${date}_${time}.txt`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      alert(`✅ 错题集下载成功！\n包含 ${wrongQuestions.length} 道错题及时间分析`);
+}
+     // 新增：下载全部答题记录（含每一次挑战的完整信息）
+function downloadAllHistoryRecords() {
+  if (accountHistory.length === 0) {
+    alert('📭 暂无答题历史记录可下载');
+    return;
+  }
+  
+  // 构建历史记录TXT内容（按时间倒序排列，最新记录在前）
+  let txtContent = `# 法治星途 · 账户全部答题记录\n`;
+  txtContent += `## 账户ID：${accountInfo.accountId}\n`;
+  txtContent += `## 生成时间：${new Date().toLocaleString()}\n`;
+  txtContent += `## 累计挑战次数：${accountHistory.length} 次\n`;
+  txtContent += `## 累计答题总数：${accountInfo.totalAnswered} 道\n`;
+  txtContent += `## 累计正确率：${accountInfo.totalAnswered > 0 ? Math.round((accountInfo.totalCorrect / accountInfo.totalAnswered) * 100) : 0}%\n\n`;
+  
+  // 逐次添加每一次挑战的详细记录
+  accountHistory.forEach((history, index) => {
+    txtContent += `### 第 ${index + 1} 次挑战（${history.time}）\n`;
+    txtContent += `挑战难度：${history.difficulty}\n`;
+    txtContent += `答题总数：${history.totalQuestions} 道\n`;
+    txtContent += `正确数量：${history.correct} 道\n`;
+    txtContent += `准确率：${history.accuracy}%\n`;
+    txtContent += `总耗时：${history.totalTime}\n`;
+    txtContent += `翻牌思考时间：${history.flipTime}\n`;
+    txtContent += `浏览时间：${history.browseTime}\n`;
+    txtContent += `错题数量：${history.wrongCount} 道\n`;
+    
+    // 补充各分类答题统计（如梦想与目标、生命教育等）
+    txtContent += `各单元正确率：\n`;
+    const categoryStats = history.categoryStats || {};
+    Object.keys(categoryStats).forEach(cat => {
+      const catData = categoryStats[cat];
+      const catAccuracy = catData.total > 0 ? Math.round((catData.correct / catData.total) * 100) : 0;
+      txtContent += `  - ${cat}：${catAccuracy}%（${catData.correct}/${catData.total}）\n`;
+    });
+    txtContent += `\n=========================================\n\n`;
+  });
+  
+  // 生成TXT文件并下载
+  const blob = new Blob([txtContent], { type: 'text/plain; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toLocaleDateString().replace(/\//g, '');
+  const time = new Date().toLocaleTimeString().replace(/:/g, '').slice(0, 6);
+  a.download = `法治星途_全部答题记录_${accountInfo.accountId}_${date}_${time}.txt`;
+  a.href = url;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert(`✅ 全部答题记录下载成功！\n包含 ${accountHistory.length} 次挑战的完整信息`);
+
+    }
+  </script>
+</body>
+</html>
