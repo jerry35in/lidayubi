@@ -704,9 +704,6 @@
         <button class="back-home-btn" onclick="backToHome()">
           🏠 返回主页
         </button>
-        <div id="status"></div>
-        <button onclick="submitScore()">📤 提交成绩到排行榜</button>
-        <button class="secondary" onclick="showLeaderboard()">🏅 查看全球排行榜</button>
       </div>
       
       <!-- 分类准确率柱状图 -->
@@ -4750,120 +4747,6 @@ function downloadAllHistoryRecords() {
   alert(`✅ 全部答题记录下载成功！\n包含 ${accountHistory.length} 次挑战的完整信息`);
 
     }
-// ==============================
-// 🔧 配置你的 GitHub 信息（必须修改！）
-// ==============================
-const GITHUB_OWNER = 'jerry35inin';       // ←←← 改成你的 GitHub 用户名！
-const GITHUB_REPO = 'Lidayubi';  // ←←← 改成你的仓库名！
-
-// 自动生成或读取 accountId
-let accountId = localStorage.getItem('accountId') || generateUUID();
-localStorage.setItem('accountId', accountId);
-
-// 显示 accountId
-document.getElementById('accountIdDisplay').textContent = accountId;
-
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-// 提交成绩（需在答题完成后调用，确保 window.currentScore 已设置）
-async function submitScore() {
-  if (!window.currentScore) {
-    document.getElementById('status').textContent = '❌ 无成绩可提交';
-    return;
-  }
-
-  const { accuracy, time } = window.currentScore;
-
-  const title = `[Score] ${accountId} - ${accuracy}%`;
-  const body = `\`\`\`json
-{
-  "accountId": "${accountId}",
-  "accuracy": ${accuracy},
-  "time": "${time}"
-}
-\`\`\``;
-
-  document.getElementById('status').textContent = '⏳ 正在提交...';
-
-  try {
-    const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: title,
-        body: body,
-        labels: ['score']
-      })
-    });
-
-    if (response.ok) {
-      document.getElementById('status').innerHTML = '✅ 提交成功！<br>排行榜将在1分钟内更新...';
-    } else {
-      document.getElementById('status').textContent = '❌ 提交失败（请确保仓库 Issues 已开启）';
-    }
-  } catch (err) {
-    document.getElementById('status').textContent = '❌ 网络错误，请重试';
-  }
-}
-
-// 查看排行榜
-async function showLeaderboard() {
-  // 创建排行榜面板（如果不存在）
-  if (!document.getElementById('leaderboardPanel')) {
-    const panel = document.createElement('div');
-    panel.id = 'leaderboardPanel';
-    panel.className = 'panel';
-    panel.innerHTML = `
-      <h2>🏆 全球排行榜（Top 50）</h2>
-      <p id="loading">加载中...（首次提交后需等待1分钟）</p>
-      <ol class="leaderboard" id="leaderboardList"></ol>
-      <button class="secondary" onclick="backToHome()">🏠 返回主页</button>
-    `;
-    document.querySelector('.container').appendChild(panel);
-  }
-
-  // 切换到排行榜
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('leaderboardPanel').classList.add('active');
-
-  // 加载数据
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('leaderboardList').innerHTML = '';
-
-  try {
-    const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/leaderboard.json?t=${Date.now()}`;
-    const response = await fetch(url);
-    const scores = await response.json();
-
-    const listEl = document.getElementById('leaderboardList');
-    if (!Array.isArray(scores) || scores.length === 0) {
-      listEl.innerHTML = '<li>暂无成绩记录</li>';
-    } else {
-      scores.forEach((score, index) => {
-        const displayId = score.accountId?.substring(0, 16) + (score.accountId.length > 16 ? '...' : '');
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${index + 1}. ${displayId}</strong> — ${score.accuracy}% | ${score.time}`;
-        listEl.appendChild(li);
-      });
-    }
-  } catch (err) {
-    document.getElementById('leaderboardList').innerHTML = '<li>加载失败，请稍后重试</li>';
-  }
-  document.getElementById('loading').style.display = 'none';
-}
-
-function backToHome() {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('homePanel').classList.add('active');
-}
-  
-  
   </script>
 </body>
 </html>
