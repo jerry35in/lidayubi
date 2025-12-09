@@ -1,0 +1,97 @@
+name: 📊 自动更新排行榜
+on:
+  issues:
+    types: [opened]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 生成 leaderboard.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: jerry35in          # ←←← 改成你的 GitHub 用户名！
+          REPO: Lidayubi     # ←←← 改成你的仓库名！
+        run: |
+          node -e "
+            const fs = require('fs');
+            const https = require('https');
+            
+            function fetchIssues(page = 1) {
+              return new Promise((resolve, reject) => {
+                const req = https.get(
+                  \`https://api.github.com/repos/\${process.env.OWNER}/\${process.env.REPO}/issues?labels=score&state=all&page=\${page}&per_page=100\`,
+                  {
+                    headers: { 
+                      'User-Agent': 'leaderboard-action',
+                      'Authorization': \`token \${process.env.GITHUB_TOKEN}\`
+                    }
+                  },
+                  res => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => resolve(JSON.parse(data)));
+                  }
+                );
+                req.on('error', reject);
+                req.end();
+              });
+            }
+
+            async function main() {
+              let allIssues = [];
+              let page = 1;
+              while (true) {
+                const issues = await fetchIssues(page);
+                if (issues.length === 0) break;
+                allIssues = allIssues.concat(issues);
+                page++;
+              }
+
+              const scores = allIssues.map(issue => {
+                try {
+                  const match = issue.body.match(/\\`\\`\\`json\\s*([\\s\\S]*?)\\s*\\`\\`\\`/);
+                  if (match) {
+                    const data = JSON.parse(match[1]);
+                    return {
+                      nickname: (data.nickname || '匿名').substring(0, 12),
+                      accuracy: Number(data.accuracy) || 0,
+                      time: data.time || '99:99',
+                      date: issue.created_at
+                    };
+                  }
+                } catch (e) {}
+                return null;
+              }).filter(Boolean);
+
+              scores.sort((a, b) => {
+                if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+                const [m1, s1] = a.time.split(':').map(Number);
+                const [m2, s2] = b.time.split(':').map(Number);
+                return (m1 * 60 + s1) - (m2 * 60 + s2);
+              });
+
+              fs.writeFileSync('leaderboard.json', JSON.stringify(scores.slice(0, 50), null, 2));
+              console.log(\`✅ 已生成 \${scores.length} 条成绩\`);
+            }
+            main().catch(console.error);
+          "
+
+      - name: 提交更新
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add leaderboard.json
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: auto-update leaderboard [skip ci]"
+            git push
+          fi
