@@ -1173,12 +1173,7 @@ function backToHome() {
   }, 100);
 }
     
-    // 页面加载时初始化账户
-    window.addEventListener('DOMContentLoaded', function() {
-      initAccount();
-      loadAccountData();
-      renderAccountInfo();
-    });
+   
     
     // 初始化设备唯一账户
     function initAccount() {
@@ -4918,7 +4913,7 @@ function saveQuizHistory() {
     alert('答题历史保存失败，但不影响本次挑战结果');
   }
 }
-    }
+    
     
     // 计时相关工具函数
     function startTotalTimer() {
