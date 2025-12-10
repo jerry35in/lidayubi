@@ -1,4 +1,623 @@
-
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>法治星途 · 卡牌挑战</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #1a3b6d, #2c5a9e);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .game-container {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      animation: containerFadeIn 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    @keyframes containerFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      animation: breathe 3s ease-in-out infinite alternate;
+    }
+    @keyframes breathe {
+      from { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+      to { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(0, 198, 251, 0.6); }
+    }
+    p.subtitle {
+      color: #a0d8ff;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+      animation: subtitleFade 1s ease-out forwards 0.3s;
+      opacity: 0;
+    }
+    @keyframes subtitleFade {
+      to { opacity: 1; }
+    }
+    /* 账户面板样式 */
+    .account-panel {
+      background: linear-gradient(135deg, rgba(0, 91, 234, 0.2), rgba(0, 198, 251, 0.1));
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 25px;
+      text-align: left;
+      animation: fadeIn 1s ease-out forwards 0.4s;
+      opacity: 0;
+      border: 1px solid rgba(0, 198, 251, 0.3);
+    }
+    .account-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .account-title {
+      color: #ffd740;
+      font-size: 1.2em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .account-tag {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd740;
+      font-size: 0.8em;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .account-stats {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 0.95em;
+      color: #a0d8ff;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stat-value {
+      color: #ffffff;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+    }
+    /* 难度选择区域样式 */
+    .difficulty-area {
+      margin: 20px 0;
+      animation: fadeIn 1s ease-out forwards 0.5s;
+      opacity: 0;
+    }
+    .difficulty-title {
+      font-size: 1.2em;
+      color: #ffd740;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .difficulty-btns {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .difficulty-btn {
+      background: linear-gradient(45deg, #005bea, #00c6fb);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 15px rgba(0, 91, 234, 0.3);
+    }
+    .difficulty-btn:hover {
+      background: linear-gradient(45deg, #0047b3, #00a8e8);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 91, 234, 0.5);
+    }
+    .difficulty-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(0, 91, 234, 0.3);
+    }
+    /* 分隔线样式 */
+    .divider {
+      width: 80%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.3);
+      margin: 25px auto;
+      animation: fadeIn 1s ease-out forwards 0.7s;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    .upload-area {
+      margin: 10px 0 30px;
+      transition: all 0.5s ease-out;
+      animation: fadeIn 1s ease-out forwards 0.9s;
+      opacity: 0;
+    }
+    .upload-btn {
+      background: linear-gradient(45deg, #4CAF50, #3e8e41);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      will-change: transform, box-shadow, background;
+    }
+    .upload-btn:hover {
+      background: linear-gradient(45deg, #3e8e41, #2d6d30);
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+    }
+    .upload-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+    }
+    .quiz-area {
+      display: none;
+      margin-top: 30px;
+      animation: quizAreaIn 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    @keyframes quizAreaIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .progress-indicator {
+      font-size: 1.2em;
+      color: #a0d8ff;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      animation: indicatorFade 0.6s ease-out forwards 0.5s;
+      opacity: 0;
+    }
+    .progress-indicator span {
+      color: #ffffff;
+      background: rgba(0, 91, 234, 0.3);
+      padding: 5px 15px;
+      border-radius: 30px;
+      margin: 0 5px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+    /* 计时显示样式 */
+    .timer-display {
+      font-size: 1.1em;
+      color: #ffd740;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    @keyframes indicatorFade {
+      to { opacity: 1; }
+    }
+    .card {
+      perspective: 1500px;
+      margin: 20px auto;
+      max-width: 600px;
+      animation: cardPop 0.5s ease-out forwards;
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    @keyframes cardPop {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      border-radius: 15px;
+      will-change: transform;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg) scale(1.02);
+    }
+    .card-front,
+    .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 15px;
+      padding: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite alternate;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    .card-front {
+      background: linear-gradient(45deg, #005bea, #00c6fb, #005bea);
+    }
+    .card-back {
+      background: linear-gradient(45deg, #f093fb, #f5576c, #f093fb);
+      transform: rotateY(180deg);
+    }
+    .options {
+      margin-top: 20px;
+      animation: optionsIn 0.6s ease-out forwards 0.3s;
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    @keyframes optionsIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .option-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 15px;
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      will-change: background, transform, box-shadow;
+    }
+    .option-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+    .option-btn:active {
+      transform: translateY(-1px);
+    }
+    .option-btn.correct {
+      background: linear-gradient(45deg, #4CAF50, #388E3C);
+      animation: correctPulse 0.5s ease-out;
+    }
+    .option-btn.incorrect {
+      background: linear-gradient(45deg, #F44336, #D32F2F);
+      animation: incorrectShake 0.3s ease-in-out;
+    }
+    @keyframes correctPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    @keyframes incorrectShake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    .result-area {
+      display: none;
+      margin-top: 30px;
+      animation: resultFadeIn 0.8s ease-out forwards;
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    @keyframes resultFadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      70% {
+        transform: scale(1.05);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .result-area h2 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      animation: confetti 0.5s ease-out infinite alternate;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+    }
+    @keyframes confetti {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+    .summary {
+      font-size: 1.3em;
+      line-height: 2;
+      margin-bottom: 20px;
+    }
+    /* 总耗时显示样式 */
+    .total-time {
+      font-size: 1.2em;
+      color: #ffd740;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    .weakness {
+      color: #FF5252;
+      font-weight: bold;
+      animation: blink 2s ease-in-out infinite alternate;
+    }
+    @keyframes blink {
+      from { opacity: 1; }
+      to { opacity: 0.8; text-shadow: 0 0 10px rgba(255, 82, 82, 0.8); }
+    }
+    /* 图表容器：禁用动画，确保Edge下可见 */
+    .chart-container {
+      width: 100%;
+      height: 380px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      opacity: 1 !important;
+      animation: none !important;
+    }
+    .chart-title {
+      font-size: 1.2em;
+      color: #a0d8ff;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .weakness-tip {
+      font-size: 1.1em;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      animation: tipFade 1s ease-out forwards 0.5s;
+      opacity: 0;
+    }
+    @keyframes tipFade {
+      to { opacity: 1; }
+    }
+    /* 按钮通用样式优化 */
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin: 20px auto;
+    }
+    .download-btn, .back-home-btn, .history-btn {
+      background: linear-gradient(45deg, #005bea, #00c6fb);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 15px rgba(0, 91, 234, 0.3);
+      display: inline-block;
+    }
+    .back-home-btn {
+      background: linear-gradient(45deg, #f5576c, #f093fb); /* 区分颜色，便于识别 */
+    }
+    .history-btn {
+      background: linear-gradient(45deg, #ff9800, #ffd740);
+    }
+    .download-btn:hover, .back-home-btn:hover, .history-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 91, 234, 0.5);
+    }
+    .download-btn:active, .back-home-btn:active, .history-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(0, 91, 234, 0.3);
+    }
+    .download-btn:hover {
+      background: linear-gradient(45deg, #0047b3, #00a8e8);
+    }
+    .back-home-btn:hover {
+      background: linear-gradient(45deg, #e84a5f, #e578f2);
+    }
+    .history-btn:hover {
+      background: linear-gradient(45deg, #f57c00, #ffc107);
+    }
+    /* 错题统计提示 */
+    .wrong-count {
+      color: #ffd740;
+      font-size: 1.1em;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    /* 历史记录模态框样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-content {
+      background: linear-gradient(135deg, #1a3b6d, #2c5a9e);
+      border-radius: 15px;
+      padding: 25px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(0, 198, 251, 0.3);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+    .modal-title {
+      color: #ffd740;
+      font-size: 1.5em;
+      margin: 0;
+    }
+    .close-modal {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .history-item {
+      background: linear-gradient(135deg, rgba(0, 91, 234, 0.1), rgba(0, 198, 251, 0.05));
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 3px solid #00c6fb;
+      transition: transform 0.3s ease;
+    }
+    .history-item:hover {
+      transform: translateX(5px);
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+      color: #a0d8ff;
+    }
+    .history-stats {
+      line-height: 1.5;
+      font-size: 1em;
+      color: #ffffff;
+    }
+    .history-empty {
+      text-align: center;
+      padding: 50px 0;
+      color: #a0d8ff;
+      font-size: 1.1em;
+    }
+    footer {
+      margin-top: 40px;
+      color: #a0d8ff;
+      font-size: 0.9em;
+      animation: footerFade 1s ease-out forwards 1s;
+      opacity: 0;
+    }
+    @keyframes footerFade {
+      to { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+      }
+    }
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+      .progress-indicator {
+        font-size: 1em;
+      }
+      .timer-display, .total-time {
+        font-size: 1em;
+      }
+      .progress-indicator span {
+        padding: 4px 12px;
+      }
+      .card-inner {
+        height: 180px;
+      }
+      .option-btn {
+        padding: 12px;
+        font-size: 1em;
+      }
+      .download-btn, .back-home-btn, .difficulty-btn, .history-btn {
+        padding: 10px 20px;
+        font-size: 1em;
+      }
+      .difficulty-btns, .btn-group {
+        gap: 10px;
+      }
+      .quiz-area, .result-area, .options {
+        animation-duration: 0.4s !important;
+      }
+      .chart-container {
+        height: 320px;
+      }
+      .account-panel {
+        padding: 12px;
+      }
+      .account-stats {
+        gap: 15px;
+        font-size: 0.9em;
+      }
+      .modal-content {
+        padding: 15px;
+      }
+    }
+    /* 模式选择区域样式 */
+.mode-area {
+  margin: 20px 0;
+  animation: fadeIn 1s ease-out forwards 0.5s;
+  opacity: 0;
+}
+.mode-title {
   font-size: 1.2em;
   color: #ffd740;
   margin-bottom: 15px;
