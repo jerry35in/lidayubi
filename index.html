@@ -611,6 +611,114 @@
         padding: 15px;
       }
     }
+    /* 模式选择区域样式 */
+.mode-area {
+  margin: 20px 0;
+  animation: fadeIn 1s ease-out forwards 0.5s;
+  opacity: 0;
+}
+.mode-title {
+  font-size: 1.2em;
+  color: #ffd740;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+.mode-btns {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.mode-btn {
+  background: linear-gradient(45deg, #005bea, #00c6fb);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  font-size: 1.1em;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 4px 15px rgba(0, 91, 234, 0.3);
+}
+.mode-btn.endless {
+  background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+}
+.mode-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 91, 234, 0.5);
+}
+.mode-btn.endless:hover {
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+.mode-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(0, 91, 234, 0.3);
+}
+/* 无尽模式存档控制样式 */
+.endless-controls {
+  margin: 15px 0;
+  animation: fadeIn 1s ease-out forwards 0.6s;
+  opacity: 0;
+  display: none; /* 默认隐藏，选择无尽模式后显示 */
+}
+.save-btn {
+  background: linear-gradient(45deg, #2ecc71, #27ae60);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 50px;
+  cursor: pointer;
+  margin: 0 10px;
+  transition: all 0.3s;
+}
+.load-btn {
+  background: linear-gradient(45deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 50px;
+  cursor: pointer;
+  margin: 0 10px;
+  transition: all 0.3s;
+}
+.save-btn:hover, .load-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}
+/* 结束按钮样式 */
+.end-btn {
+  background: linear-gradient(45deg, #e74c3c, #c0392b);
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  font-size: 1em;
+  border-radius: 50px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+.end-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.5);
+}
+/* 适配移动端 */
+@media (max-width: 768px) {
+  .mode-btns {
+    gap: 10px;
+  }
+  .endless-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .save-btn, .load-btn {
+    margin: 5px;
+  }
+}
   </style>
   <!-- 关键修复：使用Edge兼容的Chart.js版本（本地缓存+CDN双保险） -->
   <script src="chart.umd.min.js"></script>
@@ -646,7 +754,25 @@
     </div>
     
     <!-- 难度选择区域（对应3个预设题库） -->
-    <div class="difficulty-area">
+    <div class="mode-area">
+      <div class="mode-title">📌 选择挑战模式</div>
+      <div class="mode-btns">
+        <button class="mode-btn" onclick="selectMode('normal')">普通模式（固定题库）</button>
+        <button class="mode-btn endless" onclick="selectMode('endless')">无尽模式（随机循环+存档）</button>
+      </div>
+    </div>
+    
+    <!-- 新增：无尽模式存档控制 -->
+    <div class="endless-controls" id="endlessControls">
+      <button class="save-btn" onclick="saveEndlessProgress()">💾 保存进度</button>
+      <button class="load-btn" onclick="loadEndlessProgress()">📤 加载进度</button>
+      <div style="color: #a0d8ff; margin-top: 10px; font-size: 0.9em;">
+        提示：存档仅保存无尽模式进度，刷新页面后可通过加载恢复
+      </div>
+    </div>
+    
+    <!-- 原有：难度选择区域（默认隐藏，普通模式显示） -->
+    <div class="difficulty-area" id="difficultyArea">
       <div class="difficulty-title">📌 选择挑战难度</div>
       <div class="difficulty-btns">
         <button class="difficulty-btn" onclick="selectDifficulty('easy')">简单题（题库1）</button>
@@ -654,7 +780,6 @@
         <button class="difficulty-btn" onclick="selectDifficulty('hard')">难题（题库3）</button>
       </div>
     </div>
-    
     <!-- 分隔线 -->
     <div class="divider"></div>
     
@@ -668,20 +793,22 @@
     </div>
     
     <!-- 答题区域 -->
-    <div class="quiz-area" id="quizArea">
-      <div class="progress-indicator">
-        当前进度：<span id="current-question">1</span> / <span id="total-questions">0</span>
-      </div>
-      <!-- 实时计时显示 -->
-      <div class="timer-display" id="timerDisplay">⏱️ 已用时：00:00</div>
-      <div class="card" id="questionCard">
-        <div class="card-inner">
-          <div class="card-front" id="front"></div>
-          <div class="card-back" id="back"></div>
-        </div>
-      </div>
-      <div class="options" id="options"></div>
+<div class="quiz-area" id="quizArea">
+  <div class="progress-indicator">
+    当前进度：<span id="current-question">1</span> / <span id="total-questions">∞</span>
+  </div>
+  <!-- 实时计时显示 -->
+  <div class="timer-display" id="timerDisplay">⏱️ 已用时：00:00</div>
+  <div class="card" id="questionCard">
+    <div class="card-inner">
+      <div class="card-front" id="front"></div>
+      <div class="card-back" id="back"></div>
     </div>
+  </div>
+  <div class="options" id="options"></div>
+  <!-- 新增：结束按钮 -->
+  <button class="end-btn" onclick="endGame()">🛑 结束挑战</button>
+</div>
     
     <!-- 结果区域 -->
     <div class="result-area" id="resultArea">
@@ -704,6 +831,7 @@
         <button class="back-home-btn" onclick="backToHome()">
           🏠 返回主页
         </button>
+        <div id="status"></div>
       </div>
       
       <!-- 分类准确率柱状图 -->
@@ -743,39 +871,297 @@
     <footer>© 2025 小天AI伙伴 · 道德与法治学习助手</footer>
   </div>
   <script>
-    let questions = [];
-    let currentQ = null;
-    let currentIndex = 0;
-    let score = 0;
-    let answers = [];
-    let totalQuestionCount = 0; // 实际作答题数（≤20）
-    let categoryData = {};
-    let chartInstance = null;
+   let questions = [];
+let currentQ = null;
+let currentIndex = 0;
+let score = 0;
+let answers = [];
+let totalQuestionCount = 0; // 普通模式用，无尽模式为∞
+let categoryData = {};
+let chartInstance = null;
+
+// 新增：模式控制变量
+let gameMode = ''; // 'normal' 普通模式 | 'endless' 无尽模式
+let allCombinedQuestions = []; // 所有难度题库合并（无尽模式用）
+const ENDLESS_SAVE_KEY = 'ruleOfLaw_EndlessProgress'; // 无尽模式存档键
+
+// 原有：计时相关核心变量
+let totalTimer = 0;
+let questionTimer = 0;
+let timerInterval = null;
+let qTimer = null;
+let timeDistribution = { flipTime: 0, browseTime: 0 };
+
+// 原有：账户核心变量
+let accountInfo = null;
+let accountHistory = [];
+const ACCOUNT_STORAGE_KEY = 'ruleOfLaw_UniqueAccount';
+const HISTORY_STORAGE_KEY = 'ruleOfLaw_AccountHistory';
+const WRONG_QUESTIONS_KEY = 'ruleOfLaw_AccountWrongQuestions';
+
+// 原有：AES加密配置
+const AES_CONFIG = {
+  key: CryptoJS.enc.Utf8.parse('f27d5c3a8b9e10456789abcdef012345'),
+  iv: CryptoJS.enc.Utf8.parse('1234567890abcdef'),
+  mode: CryptoJS.mode.CBC,
+  padding: CryptoJS.pad.Pkcs7
+};
+
+// 页面加载时初始化（修改原有初始化逻辑）
+window.addEventListener('DOMContentLoaded', function() {
+  initAccount();
+  loadAccountData();
+  renderAccountInfo();
+  combineAllQuestions(); // 新增：合并所有难度题库
+});
+
+// 新增：合并所有难度题库（无尽模式用）
+function combineAllQuestions() {
+  const easyQs = parseQuestionsToArr(presetQuestions.easy);
+  const mediumQs = parseQuestionsToArr(presetQuestions.medium);
+  const hardQs = parseQuestionsToArr(presetQuestions.hard);
+  allCombinedQuestions = [...easyQs, ...mediumQs, ...hardQs];
+  shuffleArray(allCombinedQuestions); // 初始打乱
+}
+
+// 新增：辅助函数 - 解析题库为数组
+function parseQuestionsToArr(text) {
+  const arr = [];
+  const lines = text.split('\n');
+  let q = {};
+  
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('#') || line.includes('、') && line.endsWith('（') || line.endsWith('）')) continue;
     
-    // 计时相关核心变量（简化为翻牌时间和浏览时间）
-    let totalTimer = 0; // 总耗时（秒）
-    let questionTimer = 0; // 单题翻牌思考时间（秒）
-    let timerInterval = null; // 全局计时定时器
-    let qTimer = null; // 单题计时定时器
-    let timeDistribution = { // 简化后的时间分布数据
-      flipTime: 0, // 翻牌思考总时间（所有题目翻牌后到选择答案前的总耗时）
-      browseTime: 0 // 浏览时间（结果页停留时间）
+    if (line.startsWith('Q:')) q.question = line.substring(2).trim();
+    else if (line.startsWith('A:')) q.A = line.substring(2).trim();
+    else if (line.startsWith('B:')) q.B = line.substring(2).trim();
+    else if (line.startsWith('C:')) q.C = line.substring(2).trim();
+    else if (line.startsWith('D:')) q.D = line.substring(2).trim();
+    else if (line.startsWith('ANS:')) {
+      const encryptedAns = line.substring(4).trim();
+      q.answer = aesDecrypt(encryptedAns).toUpperCase();
+      q.category = getCategory(q.question);
+      arr.push({...q});
+      q = {};
+    }
+  }
+  return arr;
+}
+
+// 新增：选择游戏模式
+function selectMode(mode) {
+  gameMode = mode;
+  if (mode === 'normal') {
+    // 普通模式：显示难度选择，隐藏存档控制
+    document.getElementById('difficultyArea').style.display = 'block';
+    document.getElementById('endlessControls').style.display = 'none';
+    document.getElementById('total-questions').textContent = '0';
+  } else if (mode === 'endless') {
+    // 无尽模式：隐藏难度选择，显示存档控制，初始化答题
+    document.getElementById('difficultyArea').style.display = 'none';
+    document.getElementById('endlessControls').style.display = 'block';
+    document.getElementById('total-questions').textContent = '∞';
+    // 初始化无尽模式题库
+    questions = [...allCombinedQuestions];
+    startTotalTimer();
+    // 显示答题区域
+    document.querySelector('.mode-area').style.opacity = 0;
+    document.querySelector('.divider').style.opacity = 0;
+    setTimeout(() => {
+      document.querySelector('.mode-area').style.display = 'none';
+      document.querySelector('.divider').style.display = 'none';
+      document.getElementById('quizArea').style.display = 'block';
+      loadNextQuestion();
+    }, 500);
+  }
+}
+
+// 新增：保存无尽模式进度
+function saveEndlessProgress() {
+  if (gameMode !== 'endless') {
+    alert('❌ 仅无尽模式支持存档功能');
+    return;
+  }
+  
+  const saveData = {
+    currentIndex: currentIndex,
+    score: score,
+    answers: answers,
+    categoryData: categoryData,
+    totalTimer: totalTimer,
+    timeDistribution: timeDistribution,
+    questions: questions // 保存当前题库状态（已打乱）
+  };
+  
+  localStorage.setItem(ENDLESS_SAVE_KEY, JSON.stringify(saveData));
+  alert('✅ 无尽模式进度保存成功！');
+}
+
+// 新增：加载无尽模式进度
+function loadEndlessProgress() {
+  if (gameMode !== 'endless') {
+    alert('❌ 仅无尽模式支持加载功能');
+    return;
+  }
+  
+  const savedData = localStorage.getItem(ENDLESS_SAVE_KEY);
+  if (!savedData) {
+    alert('❌ 暂无保存的无尽模式进度');
+    return;
+  }
+  
+  const data = JSON.parse(savedData);
+  // 恢复游戏状态
+  currentIndex = data.currentIndex;
+  score = data.score;
+  answers = data.answers;
+  categoryData = data.categoryData;
+  totalTimer = data.totalTimer;
+  timeDistribution = data.timeDistribution;
+  questions = data.questions;
+  
+  // 恢复计时显示
+  document.getElementById('timerDisplay').textContent = `⏱️ 已用时：${formatTime(totalTimer)}`;
+  document.getElementById('current-question').textContent = currentIndex + 1;
+  
+  // 重启计时
+  if (timerInterval) clearInterval(timerInterval);
+  startTotalTimer();
+  
+  alert(`✅ 进度加载成功！当前已答题 ${currentIndex} 道，正确 ${score} 道`);
+  loadNextQuestion();
+}
+
+// 修改：加载下一题（新增无尽模式循环逻辑）
+function loadNextQuestion() {
+  // 无尽模式：循环出题，题库用尽则重新打乱
+  if (gameMode === 'endless') {
+    if (currentIndex >= questions.length) {
+      shuffleArray(questions);
+      currentIndex = 0;
+      alert('📢 题库已循环，重新打乱出题！');
+    }
+  } else {
+    // 普通模式：答题结束
+    if (currentIndex >= questions.length) {
+      endGame();
+      return;
+    }
+  }
+  
+  currentQ = questions[currentIndex];
+  document.getElementById('options').innerHTML = '';
+  document.getElementById('front').textContent = `第 ${currentIndex+1} 题`;
+  document.getElementById('back').textContent = currentQ.question;
+  document.getElementById('questionCard').classList.remove('flipped');
+  
+  // 翻牌后启动单题计时
+  setTimeout(() => {
+    document.getElementById('questionCard').classList.add('flipped');
+    qTimer = startQuestionTimer();
+  }, 300);
+  
+  document.getElementById('current-question').textContent = currentIndex + 1;
+  
+  const optionBtns = [];
+  for (let opt of ['A','B','C','D']) {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<strong>${opt}.</strong> ${currentQ[opt] || '无此选项'}`;
+    btn.dataset.opt = opt;
+    btn.onclick = () => selectAnswer(opt, optionBtns);
+    document.getElementById('options').appendChild(btn);
+    optionBtns.push(btn);
+  }
+}
+
+// 修改：保存答题历史（适配无尽模式）
+function saveQuizHistory() {
+  try {
+    const total = answers.length;
+    const correct = answers.filter(a => a.correctFlag).length;
+    const accuracy = Math.round((correct / total) * 100);
+    // 适配无尽模式难度显示
+    const difficulty = gameMode === 'endless' ? '无尽模式（随机难度）' : getCurrentDifficulty();
+    
+    const historyItem = {
+      id: Date.now(),
+      time: new Date().toLocaleString(),
+      difficulty: difficulty,
+      totalQuestions: total,
+      correct: correct,
+      accuracy: accuracy,
+      totalTime: formatTime(totalTimer),
+      flipTime: formatTime(timeDistribution.flipTime),
+      browseTime: formatTime(timeDistribution.browseTime),
+      wrongCount: total - correct,
+      categoryStats: JSON.parse(JSON.stringify(categoryData))
     };
     
-    // 账户核心变量
-    let accountInfo = null;
-    let accountHistory = []; // 账户答题历史记录
-    const ACCOUNT_STORAGE_KEY = 'ruleOfLaw_UniqueAccount';
-    const HISTORY_STORAGE_KEY = 'ruleOfLaw_AccountHistory';
-    const WRONG_QUESTIONS_KEY = 'ruleOfLaw_AccountWrongQuestions';
+    accountHistory.unshift(historyItem);
+    if (accountHistory.length > 50) accountHistory = accountHistory.slice(0, 50);
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(accountHistory));
     
-    // AES加密配置（实际项目中建议动态获取或加密存储）
-    const AES_CONFIG = {
-      key: CryptoJS.enc.Utf8.parse('f27d5c3a8b9e10456789abcdef012345'), // 256位密钥（32个字符）
-      iv: CryptoJS.enc.Utf8.parse('1234567890abcdef'), // 16位偏移量（16个字符）
-      mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7
-    };
+    accountInfo.totalAnswered += total;
+    accountInfo.totalCorrect += correct;
+    accountInfo.totalWrong += (total - correct);
+    accountInfo.lastActiveTime = new Date().toLocaleString();
+    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountInfo));
+    
+    renderAccountInfo();
+  } catch (error) {
+    console.error('保存答题历史失败：', error);
+    alert('答题历史保存失败，但不影响本次挑战结果');
+  }
+}
+
+// 修改：返回主页（重置模式状态）
+function backToHome() {
+  // 停止所有定时器
+  if (timerInterval) clearInterval(timerInterval);
+  if (qTimer) clearInterval(qTimer);
+  
+  // 重置所有游戏状态（新增模式重置）
+  questions = [];
+  currentQ = null;
+  currentIndex = 0;
+  score = 0;
+  answers = [];
+  totalQuestionCount = 0;
+  categoryData = {};
+  totalTimer = 0;
+  questionTimer = 0;
+  timeDistribution = { flipTime: 0, browseTime: 0 };
+  gameMode = ''; // 重置模式
+  
+  // 销毁图表实例
+  if (chartInstance) chartInstance.destroy();
+  if (window.timeChartInstance) window.timeChartInstance.destroy();
+  
+  // 重置显示状态
+  document.getElementById('timerDisplay').textContent = '⏱️ 已用时：00:00';
+  document.getElementById('current-question').textContent = '1';
+  document.getElementById('total-questions').textContent = '0';
+  
+  // 隐藏/显示对应区域
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('historyModal').style.display = 'none';
+  
+  // 恢复初始界面
+  document.querySelector('.mode-area').style.display = 'block';
+  document.getElementById('difficultyArea').style.display = 'none';
+  document.getElementById('endlessControls').style.display = 'none';
+  document.querySelector('.divider').style.display = 'block';
+  
+  // 恢复动画效果
+  setTimeout(() => {
+    document.querySelector('.mode-area').style.opacity = 1;
+    document.querySelector('.divider').style.opacity = 1;
+  }, 100);
+}
     
     // 页面加载时初始化账户
     window.addEventListener('DOMContentLoaded', function() {
@@ -971,31 +1357,34 @@
       document.getElementById('historyModal').style.display = 'none';
     }
     
-    // 保存错题到账户错题集
-    function saveWrongQuestionsToAccount(wrongQuestions) {
-      if (wrongQuestions.length === 0) return;
-      
-      try {
-        const savedWrong = localStorage.getItem(WRONG_QUESTIONS_KEY);
-        const allWrongQuestions = savedWrong ? (JSON.parse(savedWrong) || []) : [];
-        
-        // 去重逻辑：根据题目内容去重
-        const newWrongQuestions = wrongQuestions.filter(newWrong => {
-          return !allWrongQuestions.some(existing => existing.question === newWrong.question);
-        });
-        
-        if (newWrongQuestions.length > 0) {
-          allWrongQuestions.push(...newWrongQuestions);
-          // 限制错题集最多100道
-          if (allWrongQuestions.length > 100) {
-            allWrongQuestions.splice(0, allWrongQuestions.length - 100);
-          }
-          localStorage.setItem(WRONG_QUESTIONS_KEY, JSON.stringify(allWrongQuestions));
-        }
-      } catch (error) {
-        console.error('保存错题集失败：', error);
+    // 保存错题到账户错题集（仅普通模式和自定义题库保存）
+function saveWrongQuestionsToAccount(wrongQuestions) {
+  if (wrongQuestions.length === 0) return;
+  
+  // 仅普通模式和自定义题库保存错题到账户
+  if (gameMode === 'endless') return;
+  
+  try {
+    const savedWrong = localStorage.getItem(WRONG_QUESTIONS_KEY);
+    const allWrongQuestions = savedWrong ? (JSON.parse(savedWrong) || []) : [];
+    
+    // 去重逻辑：根据题目内容去重
+    const newWrongQuestions = wrongQuestions.filter(newWrong => {
+      return !allWrongQuestions.some(existing => existing.question === newWrong.question);
+    });
+    
+    if (newWrongQuestions.length > 0) {
+      allWrongQuestions.push(...newWrongQuestions);
+      // 限制错题集最多100道
+      if (allWrongQuestions.length > 100) {
+        allWrongQuestions.splice(0, allWrongQuestions.length - 100);
       }
+      localStorage.setItem(WRONG_QUESTIONS_KEY, JSON.stringify(allWrongQuestions));
     }
+  } catch (error) {
+    console.error('保存错题集失败：', error);
+  }
+}
     
     // AES加密函数
     function aesEncrypt(text) {
@@ -4464,9 +4853,56 @@ ANS: ${aesEncrypt('A')}`
         <p>💡 建议：多复习“${weakest}”相关内容，巩固知识短板！</p>
       `;
       
-      // 保存答题历史和错题集
-      saveQuizHistory();
-      saveWrongQuestionsToAccount(wrongQuestions);
+     // 保存答题历史到账户
+function saveQuizHistory() {
+  try {
+    const total = answers.length;
+    const correct = answers.filter(a => a.correctFlag).length;
+    const accuracy = Math.round((correct / total) * 100);
+    const difficulty = gameMode === 'endless' ? '无尽模式（随机难度）' : getCurrentDifficulty();
+    
+    // 构建详细历史记录（无论模式都记录单次挑战）
+    const historyItem = {
+      id: Date.now(),
+      time: new Date().toLocaleString(),
+      difficulty: difficulty,
+      totalQuestions: total,
+      correct: correct,
+      accuracy: accuracy,
+      totalTime: formatTime(totalTimer),
+      flipTime: formatTime(timeDistribution.flipTime),
+      browseTime: formatTime(timeDistribution.browseTime),
+      wrongCount: total - correct,
+      categoryStats: JSON.parse(JSON.stringify(categoryData)) // 深拷贝分类数据
+    };
+    
+    // 添加到历史记录（限制最多保存50条）
+    accountHistory.unshift(historyItem);
+    if (accountHistory.length > 50) {
+      accountHistory = accountHistory.slice(0, 50);
+    }
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(accountHistory));
+    
+    // 仅普通模式和自定义题库更新账户累计数据
+    if (gameMode !== 'endless') {
+      accountInfo.totalAnswered += total;
+      accountInfo.totalCorrect += correct;
+      accountInfo.totalWrong += (total - correct);
+      accountInfo.lastActiveTime = new Date().toLocaleString();
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountInfo));
+      
+      // 实时更新页面显示
+      renderAccountInfo();
+    } else {
+      // 无尽模式仅更新最后活跃时间，不更新累计统计
+      accountInfo.lastActiveTime = new Date().toLocaleString();
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountInfo));
+    }
+  } catch (error) {
+    console.error('保存答题历史失败：', error);
+    alert('答题历史保存失败，但不影响本次挑战结果');
+  }
+}
     }
     
     // 计时相关工具函数
@@ -4652,50 +5088,63 @@ ANS: ${aesEncrypt('A')}`
       }
     }
     
-    // 下载错题功能（保留并优化，新增翻牌耗时显示）
+    // 下载错题功能（支持下载账户所有错题）
     function downloadWrongQuestions() {
-      const wrongQuestions = answers.filter(a => !a.correctFlag);
-      if (wrongQuestions.length === 0) {
-        alert('🎉 恭喜！本次挑战无错题，无需下载~');
+      const currentWrong = answers.filter(a => !a.correctFlag);
+      // 读取账户历史错题
+      const savedWrong = localStorage.getItem(WRONG_QUESTIONS_KEY);
+      const allWrongQuestions = savedWrong ? (JSON.parse(savedWrong) || []) : [];
+      
+      if (allWrongQuestions.length === 0 && currentWrong.length === 0) {
+        alert('🎉 恭喜！暂无错题记录');
         return;
       }
       
-      let txtContent = `# 法治星途 · 错题集\n`;
-      txtContent += `## 下载时间：${new Date().toLocaleString()}\n`;
-      txtContent += `## 总耗时：${formatTime(totalTimer)}\n`;
-      txtContent += `## 翻牌思考总时间：${formatTime(timeDistribution.flipTime)}\n`;
-      txtContent += `## 浏览总时间：${formatTime(timeDistribution.browseTime)}\n`;
-      txtContent += `## 答题总数：${questions.length} 道\n`;
-      txtContent += `## 错题总数：${wrongQuestions.length} 道\n\n`;
+      let txtContent = `# 法治星途 · 账户错题集\n`;
+      txtContent += `## 账户ID：${accountInfo.accountId}\n`;
+      txtContent += `## 生成时间：${new Date().toLocaleString()}\n`;
+      txtContent += `## 错题总数：${allWrongQuestions.length} 道\n\n`;
       
-      wrongQuestions.forEach((wrong, index) => {
-        txtContent += `### 第 ${index + 1} 题（原题号：第${wrong.questionNum}题）\n`;
-        txtContent += `【所属分类】：${wrong.category}\n`;
-        txtContent += `【翻牌思考耗时】：${formatTime(wrong.flipTimeSpent)}\n`;
-        txtContent += `【题目】：${wrong.question}\n`;
-        txtContent += `【选项】：\n`;
-        txtContent += `  A. ${wrong.options.A}\n`;
-        txtContent += `  B. ${wrong.options.B}\n`;
-        txtContent += `  C. ${wrong.options.C}\n`;
-        txtContent += `  D. ${wrong.options.D}\n`;
-        txtContent += `【你的答案】：${wrong.userAns}（${wrong.options[wrong.userAns] || '无'})\n`;
-        txtContent += `【正确答案】：${wrong.correctAns}（${wrong.options[wrong.correctAns] || '无'})\n`;
-        txtContent += `\n=========================================\n\n`;
+      // 按分类整理错题
+      const wrongByCategory = {};
+      allWrongQuestions.forEach(wrong => {
+        const category = wrong.category || '综合素养';
+        if (!wrongByCategory[category]) wrongByCategory[category] = [];
+        wrongByCategory[category].push(wrong);
       });
       
+      // 按分类输出
+      Object.keys(wrongByCategory).forEach(category => {
+        txtContent += `### 【${category}】（${wrongByCategory[category].length} 道）\n\n`;
+        wrongByCategory[category].forEach((wrong, index) => {
+          txtContent += `#### 第 ${index + 1} 题\n`;
+          txtContent += `【题目】：${wrong.question}\n`;
+          txtContent += `【选项】：\n`;
+          txtContent += `  A. ${wrong.options.A || '无'}\n`;
+          txtContent += `  B. ${wrong.options.B || '无'}\n`;
+          txtContent += `  C. ${wrong.options.C || '无'}\n`;
+          txtContent += `  D. ${wrong.options.D || '无'}\n`;
+          txtContent += `【你的答案】：${wrong.userAns}（${wrong.options[wrong.userAns] || '无'})\n`;
+          txtContent += `【正确答案】：${wrong.correctAns}（${wrong.options[wrong.correctAns] || '无'})\n`;
+          txtContent += `【翻牌思考耗时】：${formatTime(wrong.flipTimeSpent || 0)}\n`;
+          txtContent += `\n=========================================\n\n`;
+        });
+      });
+      
+      // 生成文件并下载
       const blob = new Blob([txtContent], { type: 'text/plain; charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const date = new Date().toLocaleDateString().replace(/\//g, '');
       const time = new Date().toLocaleTimeString().replace(/:/g, '').slice(0, 6);
-      a.download = `法治星途错题集_${date}_${time}.txt`;
+      a.download = `法治星途_账户错题集_${accountInfo.accountId}_${date}_${time}.txt`;
       a.href = url;
       a.click();
       URL.revokeObjectURL(url);
       
-      alert(`✅ 错题集下载成功！\n包含 ${wrongQuestions.length} 道错题及时间分析`);
-}
-     // 新增：下载全部答题记录（含每一次挑战的完整信息）
+      alert(`✅ 错题集下载成功！\n包含账户所有 ${allWrongQuestions.length} 道错题`);
+    }
+// 新增：下载全部答题记录（含每一次挑战的完整信息）
 function downloadAllHistoryRecords() {
   if (accountHistory.length === 0) {
     alert('📭 暂无答题历史记录可下载');
@@ -4745,8 +5194,7 @@ function downloadAllHistoryRecords() {
   URL.revokeObjectURL(url);
   
   alert(`✅ 全部答题记录下载成功！\n包含 ${accountHistory.length} 次挑战的完整信息`);
-
-    }
+}
   </script>
 </body>
 </html>
