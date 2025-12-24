@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+<!-- 引入Socket.IO客户端（CDN+本地备份） -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  // 备用方案：若CDN加载失败，使用本地备份（需下载socket.io.min.js到同一目录）
+  if (typeof io === 'undefined') {
+    document.write('<script src="socket.io.min.js"><\/script>');
+  }
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>法治星途 · 卡牌挑战</title>
@@ -657,6 +665,48 @@
     
     <!-- 分隔线 -->
     <div class="divider"></div>
+<!-- 联机对战区域 -->
+<div class="difficulty-area">
+  <div class="difficulty-title">🎮 联机对战模式</div>
+  <div class="difficulty-btns">
+    <button class="difficulty-btn online-btn" onclick="initOnlineMode()">开始自动匹配</button>
+    <button class="difficulty-btn cancel-btn" onclick="cancelMatch()" style="display:none">取消匹配</button>
+  </div>
+  <!-- 匹配状态提示 -->
+  <div id="matchStatus" style="margin-top:15px; color:#ffd740; font-size:1.1em; display:none">
+    🔍 正在匹配对手...（当前匹配池：<span id="matchCount">0</span>人）
+  </div>
+</div>
+
+<!-- 联机对战答题区域（新增，替换原有quizArea的联机版本） -->
+<div class="quiz-area" id="onlineQuizArea" style="display:none">
+  <div class="progress-indicator">
+    对战进度：<span id="onlineCurrentQuestion">1</span> / 10
+    <span style="margin-left:20px">你的得分：<span id="myScore">0</span></span>
+    <span style="margin-left:10px">对手得分：<span id="opponentScore">0</span></span>
+  </div>
+  <div class="timer-display" id="onlineTimerDisplay">⏱️ 已用时：00:00</div>
+  <div style="color:#ffd740; margin:10px 0" id="opponentStatus">👤 对手准备中...</div>
+  <div class="card" id="onlineQuestionCard">
+    <div class="card-inner">
+      <div class="card-front" id="onlineFront"></div>
+      <div class="card-back" id="onlineBack"></div>
+    </div>
+  </div>
+  <div class="options" id="onlineOptions"></div>
+</div>
+
+<!-- 联机对战结果区域（新增） -->
+<div class="result-area" id="onlineResultArea" style="display:none">
+  <h2 id="battleResult">🎉 对战结束！</h2>
+  <div class="summary" id="onlineSummary"></div>
+  <div class="total-time" id="onlineTotalTimeDisplay">⏱️ 总耗时：00:00</div>
+  <div class="btn-group">
+    <button class="history-btn" onclick="openHistoryModal()">📜 查看答题历史</button>
+    <button class="back-home-btn" onclick="backToHome()">🏠 返回主页</button>
+    <button class="difficulty-btn online-btn" onclick="initOnlineMode()">🔄 再次对战</button>
+  </div>
+</div>
     
     <!-- 文件上传（保留导入自定义题库功能） -->
     <div class="upload-area">
@@ -4747,6 +4797,398 @@ function downloadAllHistoryRecords() {
   alert(`✅ 全部答题记录下载成功！\n包含 ${accountHistory.length} 次挑战的完整信息`);
 
     }
+// ======================================
+// 联机对战核心变量
+// ======================================
+let socket = null; // Socket实例
+let isOnlineMode = false; // 是否联机模式
+let roomId = ''; // 房间ID
+let opponentId = ''; // 对手账户ID
+let onlineQuestions = []; // 联机对战题库（固定10题）
+let onlineCurrentIndex = 0; // 联机当前题索引
+let myScore = 0; // 我的得分
+let opponentScore = 0; // 对手得分
+let isMatching = false; // 是否正在匹配
+let onlineTotalTimer = 0; // 联机总耗时
+let onlineTimerInterval = null; // 联机计时器
+let iHaveFinished = false; // 我是否已答完10题
+let opponentHasFinished = false; // 对手是否已答完10题
+let bothFinishedCheckTimer = null; // 检查双方是否都完成的定时
+
+// ======================================
+// 初始化联机模式
+// ======================================
+function initOnlineMode() {
+  if (isMatching) return;
+  
+  // 连接服务器（替换为你的服务器IP，本地测试用localhost）
+  socket = io('http://785f200f.r28.cpolar.top/');
+  
+  // 连接成功
+  socket.on('connect', () => {
+    console.log('连接服务器成功，SocketID：', socket.id);
+    isMatching = true;
+    document.querySelector('.online-btn').style.display = 'none';
+    document.querySelector('.cancel-btn').style.display = 'inline-block';
+    document.getElementById('matchStatus').style.display = 'block';
+    
+    // 发送匹配请求（携带当前账户ID和默认等级）
+    socket.emit('start_match', {
+      userId: accountInfo.accountId,
+      level: '新手' // 可扩展为难度选择，此处默认新手
+    });
+  });
+  
+  // 匹配成功
+  socket.on('match_success', (data) => {
+    roomId = data.roomId;
+    opponentId = data.opponentId;
+    isMatching = false;
+    document.getElementById('matchStatus').style.display = 'none';
+    console.log(`匹配成功，房间ID：${roomId}，对手ID：${opponentId}`);
+    
+    // 准备联机题库（从预设题库中随机抽取10题）
+    prepareOnlineQuestions();
+    
+    // 显示联机答题区域
+    document.querySelector('.difficulty-area').style.opacity = 0;
+    document.querySelector('.divider').style.opacity = 0;
+    document.querySelector('.upload-area').style.opacity = 0;
+    setTimeout(() => {
+      document.querySelector('.difficulty-area').style.display = 'none';
+      document.querySelector('.divider').style.display = 'none';
+      document.querySelector('.upload-area').style.display = 'none';
+      document.getElementById('onlineQuizArea').style.display = 'block';
+      startOnlineTimer();
+      loadOnlineNextQuestion();
+    }, 500);
+  });
+  
+  // 匹配池人数更新
+  socket.on('match_pool_update', (count) => {
+    document.getElementById('matchCount').textContent = count;
+  });
+  
+  // 对手答题通知
+  // 对手答题通知（核心修改：解析对手进度和完成状态）
+socket.on('opponent_answer', (data) => {
+  // 1. 实时更新对手积分（状态统一基础）
+  opponentScore = data.score || 0;
+  document.getElementById('opponentScore').textContent = opponentScore;
+  
+  // 2. 解析对手当前进度（从questionIndex反推：已答完的题数）
+  const opponentCurrentProgress = data.questionIndex + 1 || 0;
+  // 3. 标记对手是否完成（进度≥10即为完成）
+  if (opponentCurrentProgress >= 10) {
+    opponentHasFinished = true;
+    document.getElementById('opponentStatus').textContent = '✅ 对手已答完所有题，等待你完成共同结算';
+  } else {
+    document.getElementById('opponentStatus').textContent = 
+      data.isCorrect ? `✅ 对手答对第${opponentCurrentProgress}题！进度：${opponentCurrentProgress}/10` : 
+      `❌ 对手答错第${opponentCurrentProgress}题！进度：${opponentCurrentProgress}/10`;
+  }
+  
+  // 4. 关键：双方均完成则触发结算（状态统一后立即结算）
+  checkBothFinished();
+});
+  
+  // 对战结束
+  socket.on('battle_end', (data) => {
+    stopOnlineTimer();
+    const isWinner = data.winner === socket.id;
+    document.getElementById('battleResult').textContent = isWinner ? '🏆 对战胜利！' : '🤝 对战失败！';
+    document.getElementById('onlineSummary').innerHTML = `
+      对战结果：<br>
+      你的得分：${myScore} 道<br>
+      对手得分：${opponentScore} 道<br>
+      对手账户ID：${opponentId}<br>
+      总耗时：${document.getElementById('onlineTotalTimeDisplay').textContent.split('：')[1]}
+    `;
+    document.getElementById('onlineQuizArea').style.display = 'none';
+    document.getElementById('onlineResultArea').style.display = 'block';
+  });
+  
+  // 对手断开连接
+  socket.on('opponent_disconnect', () => {
+    stopOnlineTimer();
+    alert('⚠️ 对手已断开连接，对战结束');
+    backToHome();
+  });
+  
+  // 连接失败
+  socket.on('connect_error', (error) => {
+    console.error('连接服务器失败：', error);
+    alert('⚠️ 连接服务器失败，请检查服务器是否运行或网络是否正常');
+    cancelMatch();
+  });
+}
+
+// ======================================
+// 取消匹配
+// ======================================
+function cancelMatch() {
+  if (socket) {
+    socket.emit('cancel_match');
+    socket.disconnect();
+    socket = null;
+  }
+  // 新增：清除检查定时器
+  clearInterval(bothFinishedCheckTimer);
+  isMatching = false;
+  document.querySelector('.online-btn').style.display = 'inline-block';
+  document.querySelector('.cancel-btn').style.display = 'none';
+  document.getElementById('matchStatus').style.display = 'none';
+}
+
+// ======================================
+// 准备联机题库（固定10题，从预设题库抽取）
+// ======================================
+function prepareOnlineQuestions() {
+  onlineQuestions = [];
+  // 从简单题、中等题中随机抽取10题（可扩展为难度对应）
+  const allOnlinePool = [...presetQuestions.easy.split('Q: ').filter(item => item), ...presetQuestions.medium.split('Q: ').filter(item => item)];
+  shuffleArray(allOnlinePool);
+  
+  // 解析前10题
+  for (let i = 0; i < 10 && i < allOnlinePool.length; i++) {
+    const item = 'Q: ' + allOnlinePool[i];
+    const lines = item.split('\n');
+    let q = {};
+    for (let line of lines) {
+      line = line.trim();
+      if (line.startsWith('Q:')) q.question = line.substring(2).trim();
+      else if (line.startsWith('A:')) q.A = line.substring(2).trim();
+      else if (line.startsWith('B:')) q.B = line.substring(2).trim();
+      else if (line.startsWith('C:')) q.C = line.substring(2).trim();
+      else if (line.startsWith('D:')) q.D = line.substring(2).trim();
+      else if (line.startsWith('ANS:')) q.answer = aesDecrypt(line.substring(4).trim()).toUpperCase();
+    }
+    if (q.question && q.answer) onlineQuestions.push(q);
+  }
+}
+
+// ======================================
+// 加载联机下一题
+// ======================================
+function loadOnlineNextQuestion() {
+  // 若我已答完，显示等待对手提示
+  if (iHaveFinished) {
+    document.getElementById('onlineQuizArea').innerHTML = `
+      <div style="text-align: center; color: #a0d8ff; padding: 50px 0;">
+        🕒 你已答完所有题目<br>
+        对手状态：${opponentHasFinished ? '✅ 已完成' : '⏳ 答题中'}<br>
+        请等待对手完成后共同结算...
+      </div>
+    `;
+    // 启动定时器，持续检查对手是否完成
+    bothFinishedCheckTimer = setInterval(() => {
+      checkBothFinished();
+    }, 1000); // 每秒检查一次
+    return;
+  }
+  
+  // 正常加载下一题（原有逻辑保留）
+  // 正常加载下一题（原有逻辑保留）
+if (onlineCurrentIndex >= onlineQuestions.length) {
+  // 标记自己已完成
+  iHaveFinished = true;
+  // 提交最后一题（关键：明确告知服务器自己已完成）
+  socket.emit('submit_answer', {
+    roomId: roomId,
+    questionIndex: onlineCurrentIndex,
+    isCorrect: false,
+    myProgress: 10, // 进度明确为10题
+    isFinished: true // 标记完成
+  });
+  // 重新调用函数，进入等待状态
+  loadOnlineNextQuestion();
+  return;
+}
+  
+  const currentQ = onlineQuestions[onlineCurrentIndex];
+  document.getElementById('onlineOptions').innerHTML = '';
+  document.getElementById('onlineFront').textContent = `第 ${onlineCurrentIndex+1} 题`;
+  document.getElementById('onlineBack').textContent = currentQ.question;
+  document.getElementById('onlineQuestionCard').classList.remove('flipped');
+  document.getElementById('opponentStatus').textContent = opponentHasFinished ? '✅ 对手已完成，等待你答完结算' : '👤 对手答题中...';
+  
+  // 翻牌效果
+  setTimeout(() => {
+    document.getElementById('onlineQuestionCard').classList.add('flipped');
+  }, 300);
+  
+  document.getElementById('onlineCurrentQuestion').textContent = onlineCurrentIndex + 1;
+  
+  // 生成选项按钮
+  const optionBtns = [];
+  for (let opt of ['A','B','C','D']) {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<strong>${opt}.</strong> ${currentQ[opt] || '无此选项'}`;
+    btn.dataset.opt = opt;
+    btn.onclick = () => selectOnlineAnswer(opt, optionBtns);
+    document.getElementById('onlineOptions').appendChild(btn);
+    optionBtns.push(btn);
+  }
+}
+
+// ======================================
+// 联机模式选择答案
+// ======================================
+function selectOnlineAnswer(ans, optionBtns) {
+  const currentQ = onlineQuestions[onlineCurrentIndex];
+  const isCorrect = ans === currentQ.answer;
+  if (isCorrect) myScore++;
+  
+  // 禁用选项（原有逻辑保留）
+  optionBtns.forEach(btn => {
+    if (btn.dataset.opt === currentQ.answer) btn.classList.add('correct');
+    else if (btn.dataset.opt === ans && !isCorrect) btn.classList.add('incorrect');
+    btn.disabled = true;
+  });
+  
+  // 提交答案时携带自身进度（让服务器告知对手）
+// 提交答案时携带自身进度和完成状态（让服务器转发给对手）
+  socket.emit('submit_answer', {
+  roomId: roomId,
+  questionIndex: onlineCurrentIndex,
+  isCorrect: isCorrect,
+  myProgress: onlineCurrentIndex + 1, // 自己当前进度（1-10）
+  isFinished: onlineCurrentIndex + 1 >= 10 // 自己是否已完成
+});
+  
+  // 本地实时更新自己的积分（提升体验）
+  document.getElementById('myScore').textContent = myScore;
+  
+  // 进入下一题（原有逻辑保留）
+  setTimeout(() => {
+    onlineCurrentIndex++;
+    loadOnlineNextQuestion();
+  }, 1500);
+}
+
+// ======================================
+// 新增：检查双方是否都已完成，触发结算
+// ======================================
+function checkBothFinished() {
+  // 双方均完成，触发结算
+  if (iHaveFinished && opponentHasFinished) {
+    clearInterval(bothFinishedCheckTimer); // 清除检查定时器
+    // 向服务器提交最终状态，请求结算
+    socket.emit('submit_answer', {
+      roomId: roomId,
+      questionIndex: 10, // 标记已答完所有题
+      isCorrect: false,
+      isFinished: true,
+      bothFinished: true // 告知服务器双方均完成
+    });
+    // 防止服务器未响应，本地兜底触发结算
+    setTimeout(() => {
+      if (document.getElementById('onlineQuizArea').style.display !== 'none') {
+        triggerLocalSettlement();
+      }
+    }, 2000);
+  }
+}
+
+// ======================================
+// 新增：本地兜底结算（防止服务器未推送）
+// ======================================
+function triggerLocalSettlement() {
+  stopOnlineTimer();
+  let battleResult = '';
+  if (myScore > opponentScore) {
+    battleResult = '🏆 对战胜利！';
+  } else if (myScore < opponentScore) {
+    battleResult = '🤝 对战失败！';
+  } else {
+    battleResult = '🤝 对战平局！';
+  }
+  document.getElementById('battleResult').textContent = battleResult;
+  document.getElementById('onlineSummary').innerHTML = `
+    对战结果：<br>
+    你的得分：${myScore} 道<br>
+    对手得分：${opponentScore} 道<br>
+    对手账户ID：${opponentId}<br>
+    总耗时：${document.getElementById('onlineTotalTimeDisplay').textContent.split('：')[1]}
+  `;
+  document.getElementById('onlineQuizArea').style.display = 'none';
+  document.getElementById('onlineResultArea').style.display = 'block';
+}
+
+// ======================================
+// 联机计时相关函数
+// ======================================
+function startOnlineTimer() {
+  onlineTotalTimer = 0;
+  onlineTimerInterval = setInterval(() => {
+    onlineTotalTimer++;
+    document.getElementById('onlineTimerDisplay').textContent = `⏱️ 已用时：${formatTime(onlineTotalTimer)}`;
+    document.getElementById('onlineTotalTimeDisplay').textContent = `⏱️ 总耗时：${formatTime(onlineTotalTimer)}`;
+  }, 1000);
+}
+
+function stopOnlineTimer() {
+  if (onlineTimerInterval) clearInterval(onlineTimerInterval);
+}
+
+// ======================================
+// 修改返回主页函数（兼容联机模式）
+// ======================================
+function backToHome() {
+  // 停止联机相关
+  if (socket) {
+    if (roomId) socket.emit('leave_room', { roomId: roomId });
+    socket.disconnect();
+    socket = null;
+  }
+  stopOnlineTimer();
+  clearInterval(bothFinishedCheckTimer); // 新增：清除检查定时器
+  isOnlineMode = false;
+  roomId = '';
+  opponentId = '';
+  onlineCurrentIndex = 0;
+  myScore = 0;
+  opponentScore = 0;
+  
+  // 原有逻辑保留
+  if (timerInterval) clearInterval(timerInterval);
+  if (qTimer) clearInterval(qTimer);
+  questions = [];
+  currentQ = null;
+  currentIndex = 0;
+  score = 0;
+  answers = [];
+  totalQuestionCount = 0;
+  categoryData = {};
+  totalTimer = 0;
+  questionTimer = 0;
+  timeDistribution = { flipTime: 0, browseTime: 0 };
+  
+  if (chartInstance) chartInstance.destroy();
+  if (window.timeChartInstance) window.timeChartInstance.destroy();
+  
+  document.getElementById('timerDisplay').textContent = '⏱️ 已用时：00:00';
+  document.getElementById('current-question').textContent = '1';
+  document.getElementById('total-questions').textContent = '0';
+  
+  // 隐藏所有区域，显示主页
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('onlineQuizArea').style.display = 'none';
+  document.getElementById('onlineResultArea').style.display = 'none';
+  document.getElementById('historyModal').style.display = 'none';
+  
+  document.querySelector('.difficulty-area').style.display = 'block';
+  document.querySelector('.divider').style.display = 'block';
+  document.querySelector('.upload-area').style.display = 'block';
+  
+  setTimeout(() => {
+    document.querySelector('.difficulty-area').style.opacity = 1;
+    document.querySelector('.divider').style.opacity = 1;
+    document.querySelector('.upload-area').style.opacity = 1;
+  }, 100);
+}
   </script>
 </body>
 </html>
