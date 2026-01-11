@@ -4814,6 +4814,8 @@ let onlineTimerInterval = null; // 联机计时器
 let iHaveFinished = false; // 我是否已答完10题
 let opponentHasFinished = false; // 对手是否已答完10题
 let bothFinishedCheckTimer = null; // 检查双方是否都完成的定时
+let autoSettlementTimer = null; // 5分钟自动结算定时器
+const AUTO_SETTLEMENT_TIME = 5 * 60 * 1000; // 5分钟自动结算时间（毫秒）
 
 // ======================================
 // 初始化联机模式
@@ -4822,7 +4824,7 @@ function initOnlineMode() {
   if (isMatching) return;
   
   // 连接服务器（替换为你的服务器IP，本地测试用localhost）
-  socket = io('https://7d62e866.r28.cpolar.top/');
+    socket = io('http://localhost:3000');
   
   // 连接成功
   socket.on('connect', () => {
@@ -4861,6 +4863,12 @@ function initOnlineMode() {
       document.getElementById('onlineQuizArea').style.display = 'block';
       startOnlineTimer();
       loadOnlineNextQuestion();
+      
+      // 启动5分钟自动结算定时器
+      autoSettlementTimer = setTimeout(() => {
+        console.log('⏰ 5分钟自动结算时间到！');
+        triggerLocalSettlement();
+      }, AUTO_SETTLEMENT_TIME);
     }, 500);
   });
   
@@ -4871,30 +4879,34 @@ function initOnlineMode() {
   
   // 对手答题通知
   // 对手答题通知（核心修改：解析对手进度和完成状态）
-socket.on('opponent_answer', (data) => {
-  // 1. 实时更新对手积分（状态统一基础）
-  opponentScore = data.score || 0;
-  document.getElementById('opponentScore').textContent = opponentScore;
-  
-  // 2. 解析对手当前进度（从questionIndex反推：已答完的题数）
-  const opponentCurrentProgress = data.questionIndex + 1 || 0;
-  // 3. 标记对手是否完成（进度≥10即为完成）
-  if (opponentCurrentProgress >= 10) {
-    opponentHasFinished = true;
-    document.getElementById('opponentStatus').textContent = '✅ 对手已答完所有题，等待你完成共同结算';
-  } else {
-    document.getElementById('opponentStatus').textContent = 
-      data.isCorrect ? `✅ 对手答对第${opponentCurrentProgress}题！进度：${opponentCurrentProgress}/10` : 
-      `❌ 对手答错第${opponentCurrentProgress}题！进度：${opponentCurrentProgress}/10`;
-  }
-  
-  // 4. 关键：双方均完成则触发结算（状态统一后立即结算）
-  checkBothFinished();
-});
+  socket.on('opponent_answer', (data) => {
+    console.log('收到对手答题通知:', data);
+    // 1. 实时更新对手积分（状态统一基础）
+    opponentScore = data.score || 0;
+    document.getElementById('opponentScore').textContent = opponentScore;
+    
+    // 2. 解析对手当前进度和完成状态
+    const opponentCurrentProgress = data.questionIndex + 1 || 0;
+    // 3. 标记对手是否完成（进度≥10或明确标记为完成即为完成）
+    opponentHasFinished = data.isFinished || opponentCurrentProgress >= 10;
+    
+    // 4. 更新对手状态显示
+    if (opponentHasFinished) {
+      document.getElementById('opponentStatus').textContent = '✅ 对手已答完所有题，等待你完成共同结算';
+    } else {
+      document.getElementById('opponentStatus').textContent = 
+        data.isCorrect ? `✅ 对手答对第${opponentCurrentProgress}题！进度：${opponentCurrentProgress}/10` : 
+        `❌ 对手答错第${opponentCurrentProgress}题！进度：${opponentCurrentProgress}/10`;
+    }
+    
+    // 5. 关键：双方均完成则触发结算（状态统一后立即结算）
+    checkBothFinished();
+  });
   
   // 对战结束
   socket.on('battle_end', (data) => {
     stopOnlineTimer();
+    clearTimeout(autoSettlementTimer); // 清除自动结算定时器
     const isWinner = data.winner === socket.id;
     document.getElementById('battleResult').textContent = isWinner ? '🏆 对战胜利！' : '🤝 对战失败！';
     document.getElementById('onlineSummary').innerHTML = `
@@ -4915,6 +4927,36 @@ socket.on('opponent_answer', (data) => {
     backToHome();
   });
   
+  // 游戏状态同步（实时获取双方进度和得分）
+  socket.on('game_state_sync', (data) => {
+    console.log('收到游戏状态同步:', data);
+    // 更新双方得分
+    // 直接从data中获取得分，不需要检查scores字段
+    if (data.myScore !== undefined) {
+      myScore = data.myScore;
+      document.getElementById('myScore').textContent = myScore;
+    }
+    if (data.opponentScore !== undefined) {
+      opponentScore = data.opponentScore;
+      document.getElementById('opponentScore').textContent = opponentScore;
+    }
+    
+    // 更新对手状态
+    if (data.opponentProgress !== undefined) {
+      const opponentProgress = data.opponentProgress;
+      opponentHasFinished = data.opponentFinished || opponentProgress >= 10;
+      
+      if (opponentHasFinished) {
+        document.getElementById('opponentStatus').textContent = '✅ 对手已答完所有题，等待你完成共同结算';
+      } else {
+        document.getElementById('opponentStatus').textContent = `👤 对手答题中...（进度：${opponentProgress}/10）`;
+      }
+      
+      // 检查双方是否都完成
+      checkBothFinished();
+    }
+  });
+  
   // 连接失败
   socket.on('connect_error', (error) => {
     console.error('连接服务器失败：', error);
@@ -4932,8 +4974,9 @@ function cancelMatch() {
     socket.disconnect();
     socket = null;
   }
-  // 新增：清除检查定时器
+  // 新增：清除所有定时器
   clearInterval(bothFinishedCheckTimer);
+  clearTimeout(autoSettlementTimer);
   isMatching = false;
   document.querySelector('.online-btn').style.display = 'inline-block';
   document.querySelector('.cancel-btn').style.display = 'none';
@@ -4987,23 +5030,37 @@ function loadOnlineNextQuestion() {
     return;
   }
   
-  // 正常加载下一题（原有逻辑保留）
-  // 正常加载下一题（原有逻辑保留）
-if (onlineCurrentIndex >= onlineQuestions.length) {
-  // 标记自己已完成
-  iHaveFinished = true;
-  // 提交最后一题（关键：明确告知服务器自己已完成）
-  socket.emit('submit_answer', {
-    roomId: roomId,
-    questionIndex: onlineCurrentIndex,
-    isCorrect: false,
-    myProgress: 10, // 进度明确为10题
-    isFinished: true // 标记完成
-  });
-  // 重新调用函数，进入等待状态
-  loadOnlineNextQuestion();
-  return;
-}
+  // 检查是否已完成所有题目
+  if (onlineCurrentIndex >= onlineQuestions.length) {
+    // 标记自己已完成
+    iHaveFinished = true;
+    console.log('我已完成所有题目，标记为完成');
+    // 提交最终状态（关键：明确告知服务器自己已完成）
+    socket.emit('submit_answer', {
+      roomId: roomId,
+      questionIndex: onlineCurrentIndex,
+      isCorrect: false,
+      myProgress: 10, // 进度明确为10题
+      isFinished: true // 标记完成
+    });
+    // 更新对手状态显示
+    document.getElementById('opponentStatus').textContent = opponentHasFinished ? '✅ 对手已完成，正在结算...' : '⏳ 对手答题中，等待对手完成...';
+    // 立即检查双方是否都完成
+    checkBothFinished();
+    // 显示等待状态，而不是重新调用函数导致无限递归
+    document.getElementById('onlineQuizArea').innerHTML = `
+      <div style="text-align: center; color: #a0d8ff; padding: 50px 0;">
+        🕒 你已答完所有题目<br>
+        对手状态：${opponentHasFinished ? '✅ 已完成' : '⏳ 答题中'}<br>
+        请等待对手完成后共同结算...
+      </div>
+    `;
+    // 启动定时器，持续检查对手是否完成
+    bothFinishedCheckTimer = setInterval(() => {
+      checkBothFinished();
+    }, 1000); // 每秒检查一次
+    return;
+  }
   
   const currentQ = onlineQuestions[onlineCurrentIndex];
   document.getElementById('onlineOptions').innerHTML = '';
@@ -5048,14 +5105,24 @@ function selectOnlineAnswer(ans, optionBtns) {
   });
   
   // 提交答案时携带自身进度（让服务器告知对手）
-// 提交答案时携带自身进度和完成状态（让服务器转发给对手）
+// 计算当前进度和完成状态
+  const currentProgress = onlineCurrentIndex + 1;
+  const isFinished = currentProgress >= 10;
+  
+  // 提交答案时携带自身进度和完成状态（让服务器转发给对手）
   socket.emit('submit_answer', {
-  roomId: roomId,
-  questionIndex: onlineCurrentIndex,
-  isCorrect: isCorrect,
-  myProgress: onlineCurrentIndex + 1, // 自己当前进度（1-10）
-  isFinished: onlineCurrentIndex + 1 >= 10 // 自己是否已完成
-});
+    roomId: roomId,
+    questionIndex: onlineCurrentIndex,
+    isCorrect: isCorrect,
+    myProgress: currentProgress, // 自己当前进度（1-10）
+    isFinished: isFinished // 自己是否已完成
+  });
+  
+  // 如果当前是最后一题，提前标记为完成（确保状态同步）
+  if (isFinished) {
+    iHaveFinished = true;
+    console.log('当前是最后一题，提前标记为完成');
+  }
   
   // 本地实时更新自己的积分（提升体验）
   document.getElementById('myScore').textContent = myScore;
@@ -5071,20 +5138,22 @@ function selectOnlineAnswer(ans, optionBtns) {
 // 新增：检查双方是否都已完成，触发结算
 // ======================================
 function checkBothFinished() {
+  console.log('检查双方是否完成：我已完成=' + iHaveFinished + '，对手已完成=' + opponentHasFinished);
   // 双方均完成，触发结算
   if (iHaveFinished && opponentHasFinished) {
+    console.log('双方都已完成，触发结算');
     clearInterval(bothFinishedCheckTimer); // 清除检查定时器
+    clearTimeout(autoSettlementTimer); // 清除自动结算定时器
     // 向服务器提交最终状态，请求结算
-    socket.emit('submit_answer', {
+    socket.emit('battle_end_request', {
       roomId: roomId,
-      questionIndex: 10, // 标记已答完所有题
-      isCorrect: false,
-      isFinished: true,
-      bothFinished: true // 告知服务器双方均完成
+      finalScore: myScore,
+      isFinished: true
     });
     // 防止服务器未响应，本地兜底触发结算
     setTimeout(() => {
       if (document.getElementById('onlineQuizArea').style.display !== 'none') {
+        console.log('服务器未响应，触发本地兜底结算');
         triggerLocalSettlement();
       }
     }, 2000);
@@ -5096,6 +5165,7 @@ function checkBothFinished() {
 // ======================================
 function triggerLocalSettlement() {
   stopOnlineTimer();
+  clearTimeout(autoSettlementTimer); // 清除自动结算定时器
   let battleResult = '';
   if (myScore > opponentScore) {
     battleResult = '🏆 对战胜利！';
@@ -5144,6 +5214,7 @@ function backToHome() {
   }
   stopOnlineTimer();
   clearInterval(bothFinishedCheckTimer); // 新增：清除检查定时器
+  clearTimeout(autoSettlementTimer); // 新增：清除自动结算定时器
   isOnlineMode = false;
   roomId = '';
   opponentId = '';
